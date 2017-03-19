@@ -1,112 +1,56 @@
-CC = g++
+all: prepare biblio
+biblio: myBin/main.o myBin/ArticleInfo.o myBin/BiblioManager.o myBin/BiblioThreadContext.o myBin/Config.o myBin/Database.o myBin/PictureParser.o myBin/RequesterManager.o myBin/tools.o myBin/Requesters/Requester.o myBin/Requesters/ArxivRequester.o myBin/Requesters/DBLPRequester.o myBin/Requesters/NatureRequester.o myBin/Requesters/ScienceDirectRequester.o myBin/Requesters/ScopusRequester.o myBin/Requesters/SpringerRequester.o myBin/jsoncpp.o
+	g++ myBin/main.o myBin/ArticleInfo.o myBin/BiblioManager.o myBin/BiblioThreadContext.o myBin/Config.o myBin/Database.o myBin/PictureParser.o myBin/RequesterManager.o myBin/tools.o myBin/Requesters/Requester.o myBin/Requesters/ArxivRequester.o myBin/Requesters/DBLPRequester.o myBin/Requesters/NatureRequester.o myBin/Requesters/ScienceDirectRequester.o myBin/Requesters/ScopusRequester.o myBin/Requesters/SpringerRequester.o myBin/jsoncpp.o -o biblio -lcurl -lpoppler-cpp -ltesseract -llept -lpthread -lconfig++ -lopencv_core -lopencv_highgui -lopencv_imgproc -ltinyxml2 -lsqlite3
 
-CFLAGS = -g -c -std=c++11 -Wall -Wextra -Wpedantic
-CFLAGS_TEST = -std=c++11 -Wall -Wextra -Wpedantic -pthread -isystem $(GTEST_DIR)/include
-LDFLAGS = -lcurl -lpoppler-cpp -ltesseract -llept -lpthread -lconfig++ -lopencv_core -lopencv_highgui -lopencv_imgproc -ltinyxml2 -lsqlite3
+myBin/main.o: src/main.cpp src/Requesters/Requester.h src/BiblioManager.h src/BiblioThreadContext.h
+	g++ -std=c++11 -c src/main.cpp -o myBin/main.o
 
-SRC = src
-BIN = bin
+myBin/ArticleInfo.o: src/ArticleInfo.cpp src/ArticleInfo.h lib/json/json.h lib/json/value.h
+	g++ -std=c++11 -c src/ArticleInfo.cpp -o myBin/ArticleInfo.o
 
-TEST_BIN = bin
-GTEST_DIR = lib/googletest-master/googletest
-JSON_DIR = lib/json
-REQ_DIR = Requesters
-TEST_DIR = test
+myBin/BiblioManager.o: src/BiblioManager.cpp src/BiblioManager.h src/RequesterManager.h src/BiblioThreadContext.h
+	g++ -std=c++11 -c src/BiblioManager.cpp -o myBin/BiblioManager.o
 
-TESTS = bibliotest 
+myBin/BiblioThreadContext.o: src/BiblioThreadContext.cpp src/BiblioThreadContext.h
+	g++ -std=c++11 -c src/BiblioThreadContext.cpp -o myBin/BiblioThreadContext.o
 
-GTEST_HEADERS = $(GTEST_DIR)/include/gtest/*.h \
-                $(GTEST_DIR)/include/gtest/internal/*.h
-TESTS_EXE = $(addprefix $(TEST_BIN)/, $(TESTS))
+myBin/Config.o: src/Config.cpp src/Config.h
+	g++ -std=c++11 -c src/Config.cpp -o myBin/Config.o
 
-FILES_REQUESTERS = Requester.cpp DBLPRequester.cpp SpringerRequester.cpp ArxivRequester.cpp NatureRequester.cpp ScopusRequester.cpp ScienceDirectRequester.cpp
-FILES_REQUESTERS_SOURCES = $(addprefix $(REQ_DIR)/, $(FILES_REQUESTERS))
+myBin/Database.o: src/Database.cpp src/Database.h
+	g++ -std=c++11 -c src/Database.cpp -o myBin/Database.o
 
-FILES_FOR_TESTS = Config.cpp $(FILES_REQUESTERS_SOURCES) ArticleInfo.cpp tools.cpp PictureParser.cpp BiblioManager.cpp Database.cpp RequesterManager.cpp BiblioThreadContext.cpp
+myBin/PictureParser.o: src/PictureParser.cpp src/PictureParser.h
+	g++ -std=c++11 -c src/PictureParser.cpp -o myBin/PictureParser.o
 
-HEADERS_FOR_TESTS = $(addprefix $(SRC)/, $(FILES_FOR_TESTS:.cpp=.h))
+myBin/RequesterManager.o: src/RequesterManager.cpp src/RequesterManager.h src/Requesters/ArxivRequester.h src/Requesters/DBLPRequester.h src/Requesters/NatureRequester.h src/Requesters/ScienceDirectRequester.h src/Requesters/ScopusRequester.h src/Requesters/SpringerRequester.h
+	g++ -std=c++11 -c src/RequesterManager.cpp -o myBin/RequesterManager.o
 
-FILES = $(FILES_FOR_TESTS) main.cpp 
+myBin/tools.o: src/tools.cpp src/tools.h src/Config.h lib/tinydir/tinydir.h
+	g++ -std=c++11 -c src/tools.cpp -o myBin/tools.o
 
-SOURCES = $(addprefix $(SRC)/, $(FILES))
-OBJECTS = $(addprefix $(BIN)/, $(FILES:.cpp=.o)) $(BIN)/jsoncpp.o
+myBin/Requesters/Requester.o: src/Requesters/Requester.cpp src/Requesters/Requester.h
+	g++ -std=c++11 -c src/Requesters/Requester.cpp -o src/Requesters/Requester.o -o myBin/Requesters/Requester.o
 
-SOURCES_FOR_TESTS = $(addprefix $(SRC)/, $(FILES_FOR_TESTS))
-OBJECTS_FOR_TESTS = $(addprefix $(BIN)/, $(FILES_FOR_TESTS:.cpp=.o)) $(BIN)/jsoncpp.o
+myBin/Requesters/ArxivRequester.o: src/Requesters/ArxivRequester.cpp src/Requesters/ArxivRequester.h
+	g++ -std=c++11 -c src/Requesters/ArxivRequester.cpp -o myBin/Requesters/ArxivRequester.o
+myBin/Requesters/DBLPRequester.o: src/Requesters/DBLPRequester.cpp src/Requesters/DBLPRequester.h
+	g++ -std=c++11 -c src/Requesters/DBLPRequester.cpp -o myBin/Requesters/DBLPRequester.o
+myBin/Requesters/NatureRequester.o: src/Requesters/NatureRequester.cpp src/Requesters/NatureRequester.h
+	g++ -std=c++11 -c src/Requesters/NatureRequester.cpp -o myBin/Requesters/NatureRequester.o
+myBin/Requesters/ScienceDirectRequester.o: src/Requesters/ScienceDirectRequester.cpp src/Requesters/ScienceDirectRequester.h
+	g++ -std=c++11 -c src/Requesters/ScienceDirectRequester.cpp -o myBin/Requesters/ScienceDirectRequester.o
+myBin/Requesters/ScopusRequester.o: src/Requesters/ScopusRequester.cpp src/Requesters/ScopusRequester.h
+	g++ -std=c++11 -c src/Requesters/ScopusRequester.cpp -o myBin/Requesters/ScopusRequester.o
+myBin/Requesters/SpringerRequester.o: src/Requesters/SpringerRequester.cpp src/Requesters/SpringerRequester.h
+	g++ -std=c++11 -c src/Requesters/SpringerRequester.cpp -o myBin/Requesters/SpringerRequester.o
 
-EXECUTABLE = $(BIN)/main
-
-all: prepare $(EXECUTABLE)
-
-$(EXECUTABLE): $(OBJECTS) 
-	$(CC) $(OBJECTS) -o $@ $(LDFLAGS) 
-
-$(BIN)/Parser.o: $(BIN)/tools.o
-
-$(BIN)/jsoncpp.o: $(JSON_DIR)/jsoncpp.cpp
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BIN)/main.o: $(SRC)/main.cpp
-	$(CC) $(CFLAGS) $< -o $@
-
-$(BIN)/%.o: $(SRC)/%.cpp $(SRC)/%.h $(HEADERS_FOR_TESTS)
-	$(CC) $(CFLAGS) $< -o $@
+myBin/jsoncpp.o: lib/json/jsoncpp.cpp lib/json/json.h
+	g++ -std=c++11 -c lib/json/jsoncpp.cpp -o myBin/jsoncpp.o
 
 prepare:
-	mkdir -p $(BIN)
-	mkdir -p $(BIN)/$(REQ_DIR)
-
-test: prepare $(TESTS_EXE)
+	mkdir -p myBin
+	mkdir -p myBin/Requesters	
 
 clean:
-	rm -rf $(BIN)
-
-###########################################################################################
-# Test build
-###########################################################################################
-
-$(TEST_BIN)/bibliotest.o : $(TEST_DIR)/bibliotest.cpp $(SOURCES_FOR_TESTS) $(GTEST_HEADERS) 
-	$(CC) $(CFLAGS_TEST) -c $(TEST_DIR)/bibliotest.cpp -o $@
-
-$(TEST_BIN)/bibliotest : $(TEST_BIN)/bibliotest.o $(OBJECTS_FOR_TESTS) $(TEST_BIN)/gtest_main.a
-	$(CC) $(CFLAGS_TEST) -lpthread $^ -o $@ $(LDFLAGS) 
-
-###########################################################################################
-# Google Test Library
-###########################################################################################
-# Builds gtest.a and gtest_main.a.
-
-# Usually you shouldn't tweak such internal variables, indicated by a
-# trailing _.
-GTEST_SRCS_ = $(GTEST_DIR)/src/*.cc $(GTEST_DIR)/src/*.h $(GTEST_HEADERS)
-
-# For simplicity and to avoid depending on Google Test's
-# implementation details, the dependencies specified below are
-# conservative and not optimized.  This is fine as Google Test
-# compiles fast and for ordinary users its source rarely changes.
-$(TEST_BIN)/gtest-all.o : $(GTEST_SRCS_)
-	$(CC) $(CFLAGS_TEST) -I$(GTEST_DIR) -c \
-            $(GTEST_DIR)/src/gtest-all.cc -o $@
-
-$(TEST_BIN)/gtest_main.o : $(GTEST_SRCS_)
-	$(CC) $(CFLAGS_TEST) -I$(GTEST_DIR) -c \
-            $(GTEST_DIR)/src/gtest_main.cc -o $@
-
-$(TEST_BIN)/gtest.a : $(TEST_BIN)/gtest-all.o
-	$(AR) $(ARFLAGS) $@ $^ 
-
-$(TEST_BIN)/gtest_main.a : $(TEST_BIN)/gtest-all.o $(TEST_BIN)/gtest_main.o
-	$(AR) $(ARFLAGS) $@ $^
-
-###########################################################################################
-# Test bib
-###########################################################################################
-
-tex: $(EXECUTABLE)
-	make -C tex clean
-	make -C tex all
-
-tex_clean:
-		make -C tex clean
-
-.PHONY: tex_clean tex
+	rm -rf myBin biblio
