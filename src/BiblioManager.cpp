@@ -21,7 +21,7 @@ std::vector<ArticleInfo> BiblioManager::search_requester(Requester &requester, s
     // discard first word
     string new_query = "";
     for (unsigned int i = 1; i < words.size()-1; i++) {
-    new_query += words[i] + " ";
+        new_query += words[i] + " ";
     }
     new_query += words[words.size()-1];
     additional_result = requester.publication_request(new_query);
@@ -30,7 +30,7 @@ std::vector<ArticleInfo> BiblioManager::search_requester(Requester &requester, s
     // discard last word
     new_query = "";
     for (unsigned int i = 0; i < words.size()-2; i++) {
-     new_query += words[i] + " ";
+        new_query += words[i] + " ";
     }
     new_query += words[words.size()-2];
     additional_result = requester.publication_request(new_query);
@@ -39,7 +39,7 @@ std::vector<ArticleInfo> BiblioManager::search_requester(Requester &requester, s
     // discard first two words
     new_query = "";
     for (unsigned int i = 2; i < words.size()-1; i++) {
-     new_query += words[i] + " ";
+        new_query += words[i] + " ";
     }
     new_query += words[words.size()-1];
     additional_result = requester.publication_request(new_query);
@@ -81,7 +81,7 @@ bool BiblioManager::greater(const ArticleInfo &info_1, const ArticleInfo &info_2
     return (info_1.get_precision() > info_2.get_precision());
 }
 
-void BiblioManager::print_bib(ostream &out,  vector<ArticleInfo> &result) {
+void BiblioManager::print_bib(ostream &out, const vector<ArticleInfo> &result) const {
     for (size_t k = 0; k < result.size(); k++) {
         if (result[k].get_authors().size() > 0) {
             vector<string> authors = result[k].get_authors();
@@ -150,7 +150,7 @@ void BiblioManager::end_print_html(ostream &out) {
     out << "</html>\n";
 }
 
-void BiblioManager::print_html(ostream &out,  vector<ArticleInfo> &result) {
+void BiblioManager::print_html(ostream &out, const vector<ArticleInfo> &result) {
     for (size_t i = 0; i < result.size(); i++) {
         out << "\t\t\t<tr>\n";
         out << "\t\t\t\t<td align=\"center\"><a href=\"" << result[i].get_filename() << "\">" << result[i].get_filename() << "</a></td>\n";
@@ -202,10 +202,10 @@ BiblioManager::BiblioManager(int threads) {
 
 std::vector<ArticleInfo>
 BiblioManager::search_distance(std::function<size_t(const std::string &,
-                                                    const std::string &)> dist, bool offline) {
+                                                    const std::string &)> dist, bool is_offline) {
     vector<thread> threads;
     for(int i = 0; i < threads_num; ++i){
-        threads.push_back(std::thread(thread_function, dist, offline));
+        threads.push_back(std::thread(thread_function, dist, is_offline));
     }
 
     for(auto& thread : threads){
@@ -215,7 +215,7 @@ BiblioManager::search_distance(std::function<size_t(const std::string &,
 }
 
 void
-BiblioManager::thread_function(std::function<size_t(const std::string &, const std::string &)> dist, bool offline) {
+BiblioManager::thread_function(std::function<size_t(const std::string &, const std::string &)> dist, bool is_offline) {
     string filename;
     vector<ArticleInfo> result = {};
     RequesterManager req_manager = RequesterManager();
@@ -230,7 +230,7 @@ BiblioManager::thread_function(std::function<size_t(const std::string &, const s
         PictureParser picture_parser = PictureParser(filename, 300, 300, get_random_filename() + ".png", "png", 700);
         string saved_title = raw_to_formatted(picture_parser.find_title());
         string title = low_letters_only(saved_title);
-        if (offline || title.size() == 0) {
+        if (is_offline || title.size() == 0) {
             BiblioThreadContext::instance().my_push(ArticleInfo(saved_title, filename));
             continue;
         }
@@ -264,7 +264,7 @@ BiblioManager::BiblioManager() {
     threads_num = 1;
 }
 
-void BiblioManager::cout_not_found_articles( vector<ArticleInfo> &result) {
+void BiblioManager::cout_not_found_articles(const vector<ArticleInfo> &result) {
     cout << "=========================================================================" << endl;
     cout << "                       Start not found articles                          " << endl;
     cout << "=========================================================================" << endl << endl;

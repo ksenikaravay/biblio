@@ -15,9 +15,8 @@ Database::Database(const string &db_filename){
 
 Database * Database::connect_database() {
     Config& cfg = Config::get_instance();
-    string name = "database";
     try {
-        if (cfg.exists(name) && cfg.lookup("database.enabled")){
+        if (cfg.exists("database") && cfg.lookup("database.enabled")){
             string filename = cfg.lookup("database.filename");
             Database * my_db = new Database(filename);    
             return my_db;
@@ -30,7 +29,7 @@ Database * Database::connect_database() {
 }
 
 
-int Database::check_status(const char * request, sqlite3_stmt **stmt) {
+int Database::check_status(const char * request, sqlite3_stmt **stmt) const {
     int rc = sqlite3_prepare(db, request, -1, stmt, NULL);
     if(rc != SQLITE_OK) {
         cout << "status: " << rc << endl;
@@ -53,7 +52,7 @@ int Database::check_status(const char * request, sqlite3_stmt **stmt) {
     return 0;
 }
 
-ArticleInfo * Database::get_data(std::string filename) {
+ArticleInfo * Database::get_data(std::string filename) const {
     sqlite3_stmt *stmt;
     string request = "";
 
