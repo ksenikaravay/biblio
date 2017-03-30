@@ -54,8 +54,7 @@ int main(int argc, char **argv) {
                 db->purge();
             }
         } else if (start_server.isSet()) {
-            BiblioServer bs;
-            bs.startServer();
+            BiblioServer::get_instance().startServer();
         } else {
             int threads = sysconf(_SC_NPROCESSORS_ONLN);
             BiblioManager manager(threads);
@@ -63,8 +62,12 @@ int main(int argc, char **argv) {
             vector<string> filenames = get_filenames(files, directories);
             try {
                 vector<string> filenames_to_search = {};
-                vector<ArticleInfo> data_from_db = {};
-                check_filenames_in_db(filenames, db, data_from_db, filenames_to_search);
+                vector<ArticleInfo> data_from_db;
+                if (db != nullptr) {
+                    data_from_db = db->get_data(filenames, &filenames_to_search);
+                } else {
+                    filenames_to_search = filenames;
+                }
 
                 queue<string, deque<string>> in(deque<string>(filenames_to_search.begin(), filenames_to_search.end()));
                 BiblioThreadContext::init(in);
@@ -113,24 +116,6 @@ vector<string> get_filenames(TCLAP::UnlabeledMultiArg<string> &files, TCLAP::Mul
         filenames[i] = get_absolute_path(filenames[i]);
     }
     return filenames;
-}
-
-void check_filenames_in_db(const vector<string>& filenames, const Database *db,
-                           vector<ArticleInfo>& data_from_db, vector<string>& filenames_to_search) {
-    for (const auto &filename : filenames) {
-        ArticleInfo *result_ptr = nullptr;
-        if (db != nullptr) {
-            result_ptr = db->get_data(filename);
-            if ((result_ptr != nullptr) && (!need_to_complete_data(result_ptr))) {
-                data_from_db.push_back(*result_ptr);
-                delete result_ptr;
-            } else {
-                filenames_to_search.push_back(filename);
-            }
-        } else {
-            filenames_to_search.push_back(filename);
-        }
-    }
 }
 
 void print_bib_html(const vector<ArticleInfo> &data_from_db, const BiblioManager &manager, const vector<ArticleInfo> &result) {

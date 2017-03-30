@@ -21,7 +21,8 @@ public:
     ~Database();
     static Database * connect_database();
     int check_status (const char * request, sqlite3_stmt **stmt) const;
-    ArticleInfo * get_data(std::string filename) const;
+    ArticleInfo * get_data(const std::string& filename) const;
+    std::vector<ArticleInfo> get_data(const std::vector<std::string>& filenames, std::vector<std::string>* absent = nullptr) const;
     void add_data(const std::vector<ArticleInfo> &data);
     void purge();
 };

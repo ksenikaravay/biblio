@@ -1,7 +1,19 @@
 #include "../lib/mongoose/mongoose.h"
+#include <string>
 
-class BiblioServer {
+class BiblioServer { //singleton
+private:
+    std::string content;
+
+    BiblioServer();
+    BiblioServer(BiblioServer const &);
+    BiblioServer& operator= (BiblioServer const &);
+
+    static void ev_handler(mg_connection *conn, int event, void * data);
 public:
-	void startServer();
-	static void ev_handler(mg_connection *conn, int event, void * data);
+    static BiblioServer & get_instance();
+
+    std::string& get_content();
+    void startServer();
+
 };
