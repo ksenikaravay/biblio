@@ -3,7 +3,7 @@ This tool helps to find bibliographic information for your pdf files. It generat
 
 **USAGE:**
 
-./main  {-p | \<files\> ... | -d \<path\> ... } [-c \<filename\>] [-b] [-f] [--] [--version] [-h]
+./biblio  {-p | \<files\> ... | -d \<path\> ... } [-c \<filename\>] [-b] [-f] [--] [--version] [-h]
  - \<files\>      	*(accepted multiple times)* **(OR required)**  *file names*
  - -d \<path\>,  --directory \<path\>     	*(accepted multiple times)* **(OR required)**  *directories for recursive search of PDF documents*
  - -p,  --purge     	**(OR required)** *purges database from non-existent files.*

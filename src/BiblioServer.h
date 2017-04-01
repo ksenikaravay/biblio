@@ -1,19 +1,30 @@
 #include "../lib/mongoose/mongoose.h"
 #include <string>
+#include <mutex>
+#include <condition_variable>
 
 class BiblioServer { //singleton
 private:
     std::string content;
+    std::mutex m_content;
+    std::condition_variable rescan_cond_var;
 
     BiblioServer();
     BiblioServer(BiblioServer const &);
     BiblioServer& operator= (BiblioServer const &);
 
     static void ev_handler(mg_connection *conn, int event, void * data);
-public:
-    static BiblioServer & get_instance();
+    static void thread_function();
+    static std::string  rescan();
 
     std::string& get_content();
+    std::mutex& get_m_content();
+    std::condition_variable& get_rescan_cond_var();
+public:
+
+    static BiblioServer & get_instance();
+    std::string get_content_copy();
+
     void startServer();
 
 };
