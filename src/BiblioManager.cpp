@@ -141,16 +141,15 @@ void BiblioManager::start_print_html(ostream &out) {
     out << "\t\t<title>Biblio results</title>\n";
     out << "\t</head>\n";
     out << "\t<body>\n";
-    out << "\t\t<table border=\"1\" width=\"100%\" cellpadding=\"5\" bgcolor=\"#42D6FF\">\n";
 }
 
 void BiblioManager::end_print_html(ostream &out) {
-    out << "\t\t</table>" << endl;
     out << "\t</body>\n";
     out << "</html>\n";
 }
 
 void BiblioManager::print_html(ostream &out, const vector<ArticleInfo> &result) {
+    out << "\t\t<table border=\"1\" width=\"100%\" cellpadding=\"5\" bgcolor=\"#42D6FF\">\n";
     for (size_t i = 0; i < result.size(); i++) {
         out << "\t\t\t<tr>\n";
         out << "\t\t\t\t<td align=\"center\"><a href=\"" << result[i].get_filename() << "\">" << result[i].get_filename() << "</a></td>\n";
@@ -194,6 +193,8 @@ void BiblioManager::print_html(ostream &out, const vector<ArticleInfo> &result) 
         out << "\t\t\t\t</td>\n";
         out << "\t\t\t</tr>\n";
     }
+
+    out << "\t\t</table>" << endl;
 }
 
 BiblioManager::BiblioManager(int threads) {
