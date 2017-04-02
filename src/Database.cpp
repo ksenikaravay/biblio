@@ -114,8 +114,7 @@ std::vector<ArticleInfo> Database::get_data(const std::vector<std::string> &file
                                             std::vector<std::string> * absent) const {
     std::vector<ArticleInfo> data_from_db = {};
     for (const auto &filename : filenames) {
-        ArticleInfo *result_ptr = nullptr;
-        result_ptr = get_data(filename);
+        ArticleInfo *result_ptr = get_data(filename);
         if (result_ptr != nullptr) {
             data_from_db.push_back(*result_ptr);
             delete result_ptr;

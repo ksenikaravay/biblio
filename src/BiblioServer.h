@@ -14,12 +14,9 @@ private:
     BiblioServer& operator= (BiblioServer const &);
 
     static void ev_handler(mg_connection *conn, int event, void * data);
-    static void thread_function();
-    static std::string  rescan();
+    static void update_db_thread_function();
+    static std::string rescan_and_get_content();
 
-    std::string& get_content();
-    std::mutex& get_m_content();
-    std::condition_variable& get_rescan_cond_var();
 public:
 
     static BiblioServer & get_instance();

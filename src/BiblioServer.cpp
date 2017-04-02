@@ -38,19 +38,7 @@ std::string BiblioServer::get_content_copy() {
     return content;
 }
 
-std::string& BiblioServer::get_content() {
-    return content;
-}
-
-std::mutex& BiblioServer::get_m_content() {
-    return m_content;
-}
-
-std::condition_variable& BiblioServer::get_rescan_cond_var() {
-    return rescan_cond_var;
-}
-
-std::string BiblioServer::rescan() {
+std::string BiblioServer::rescan_and_get_content(){
     std::string directoryPath = Config::get_instance().lookup("articles.path");
     std::vector<std::string> filenames = read_pdf_files_recursive(directoryPath);
 
@@ -59,6 +47,10 @@ std::string BiblioServer::rescan() {
     std::vector<std::string> filenames_to_search;
     if (db != nullptr) {
         data_from_db = db->get_data(filenames, &filenames_to_search);
+    }
+
+    if (filenames_to_search.empty()) {
+        return "";
     }
 
     BiblioManager manager;
@@ -77,29 +69,33 @@ std::string BiblioServer::rescan() {
     manager.print_html(out_html, data_from_db);
     BiblioManager::end_print_html(out_html);
 
-    std::string res = out_html.str();
-
-    return res;
+    return out_html.str();
 }
 
-void BiblioServer::thread_function(){
+void BiblioServer::update_db_thread_function(){
+    BiblioServer& instance = BiblioServer::get_instance();
     int timeout = std::stoi(Config::get_instance().lookup("articles.timeout"));
     std::mutex m_tmp;
     while (true){
         std::unique_lock<std::mutex> lock_to_wait(m_tmp);
-        BiblioServer::get_instance().get_rescan_cond_var().wait_for(lock_to_wait, std::chrono::seconds(timeout));
-        std::string out_html = BiblioServer::rescan();
-        std::unique_lock<std::mutex> lock_content(BiblioServer::get_instance().get_m_content());
-        BiblioServer::get_instance().get_content() = out_html;
+        instance.rescan_cond_var.wait_for(lock_to_wait, std::chrono::seconds(timeout));
+
+        std::string out_html = rescan_and_get_content();
+        if (!out_html.empty()) {
+            std::unique_lock<std::mutex> lock_content(instance.m_content);
+            instance.content = out_html;
+        }
     }
 }
 
 void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
+    BiblioServer& instance = BiblioServer::get_instance();
+
     if (event == MG_EV_HTTP_REQUEST) {
         std::string out_html;
         {
-            std::unique_lock<std::mutex> lock(BiblioServer::get_instance().get_m_content());
-            out_html = BiblioServer::get_instance().get_content_copy();
+            std::unique_lock<std::mutex> lock(instance.m_content);
+            out_html = instance.get_content_copy();
         }
 
         mg_send_head(conn, 200, -1, "");
@@ -128,7 +124,7 @@ void BiblioServer::startServer() {
     mg_set_protocol_http_websocket(conn);
 //    mg_set_timer(conn, mg_time() + timeout);
 
-    std::thread thread_updating_db(thread_function);
+    std::thread thread_updating_db(update_db_thread_function);
 
     for (;;) {
         mg_mgr_poll(&mgr, 1000);

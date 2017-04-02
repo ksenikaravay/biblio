@@ -24,6 +24,7 @@ public:
         in = _in;
         count = 0;
         size = in.size();
+        out.clear();
     }
     static BiblioThreadContext& instance() {
         static BiblioThreadContext biblio;

@@ -200,8 +200,7 @@ BiblioManager::BiblioManager(int threads) {
     this->threads_num = threads;
 }
 
-std::vector<ArticleInfo>
-BiblioManager::search_distance(std::function<size_t(const std::string &,
+std::vector<ArticleInfo> BiblioManager::search_distance(std::function<size_t(const std::string &,
                                                     const std::string &)> dist, bool is_offline) {
     vector<thread> threads;
     for(int i = 0; i < threads_num; ++i){
