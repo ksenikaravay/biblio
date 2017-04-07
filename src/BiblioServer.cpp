@@ -2,11 +2,14 @@
 #include <queue>
 #include <sstream>
 #include <thread>
+#include <ctime>
 
 #include "BiblioServer.h"
 #include "Database.h"
 #include "BiblioManager.h"
 #include "BiblioThreadContext.h"
+#include <iomanip>
+#include <algorithm>
 
 void print_rescan_button_html(std::ostream &out){
     out << "<script type=\"text/javascript\">\n"
@@ -17,6 +20,14 @@ void print_rescan_button_html(std::ostream &out){
             "    }\n"
             "</script>\n"
             "<p align=\"center\"><button type=\"button\" onclick=\"on_button_click()\">Rescan directory</button></p>";
+}
+
+void log(const char *message) {
+    time_t seconds = time(NULL);
+    tm* timeinfo = localtime(&seconds);
+    char buf[10];
+    sprintf(buf, "%02d:%02d:%02d: ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    std::cout << buf << message << std::endl;
 }
 
 BiblioServer::BiblioServer() {
@@ -102,6 +113,8 @@ void BiblioServer::update_db_thread_function(){
         if (!out_html.empty()) {
             std::unique_lock<std::mutex> lock_content(instance.m_content);
             instance.content = out_html;
+
+            log("out_html updated");
         }
     }
 }
@@ -113,42 +126,38 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
 
         struct http_message *hm = (struct http_message *) data;
         std::string query(hm->query_string.p, hm->query_string.len);
-        if (query == "rescan"){
-            instance.rescan_cond_var.notify_one();
-        } else {
-            std::string out_html;
-            {
-                std::unique_lock<std::mutex> lock(instance.m_content);
-                out_html = instance.get_content_copy();
+        std::string uri(hm->uri.p, hm->uri.len);
+        mg_send_head(conn, 200, -1, "");
+        if (uri == "/") {
+            if (query == "rescan") {
+                instance.rescan_cond_var.notify_one();
+
+                log("force rescan started");
+            } else {
+                std::string out_html;
+                {
+                    std::unique_lock<std::mutex> lock(instance.m_content);
+                    out_html = instance.get_content_copy();
+                }
+                mg_printf_http_chunk(conn, "%s", out_html.c_str());
+
+                log("got new request to /");
             }
-
-            mg_send_head(conn, 200, -1, "");
-            mg_printf_http_chunk(conn, "%s", out_html.c_str());
-            mg_send_http_chunk(conn, "", 0);
         }
-
+        mg_send_http_chunk(conn, "", 0);
     }
-
-//    if (event == MG_EV_TIMER) {
-//
-//
-//        double timeout = std::stod(Config::get_instance().lookup("articles.timeout"));
-//        mg_set_timer(conn, mg_time() + timeout);
-//    }
 }
 
 void BiblioServer::startServer() {
     const char *http_port = Config::get_instance().lookup("articles.port");
-//    double timeout = std::stod(Config::get_instance().lookup("articles.timeout"));
     struct mg_mgr mgr;
     struct mg_connection *conn;
-
-
 
     mg_mgr_init(&mgr, NULL);
     conn = mg_bind(&mgr, http_port, ev_handler);
     mg_set_protocol_http_websocket(conn);
-//    mg_set_timer(conn, mg_time() + timeout);
+
+    log("starting server");
 
     std::thread thread_updating_db(update_db_thread_function);
 
