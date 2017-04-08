@@ -189,11 +189,6 @@ void Database::add_data(const std::vector<ArticleInfo> &data) {
     }
 }
 
-inline bool exists(const std::string &name) {
-    struct stat buffer;
-    return (stat(name.c_str(), &buffer) == 0);
-}
-
 void Database::purge() {
     sqlite3_stmt *stmt;
     int rc;
@@ -224,7 +219,7 @@ void Database::purge() {
                         break;
                     case SQLITE_ROW:
                         string paper_filename = string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1)));
-                        if (!exists(paper_filename)) {
+                        if (!file_exists(paper_filename)) {
                             ids_to_purge.push_back(sqlite3_column_int(stmt, 0));
                         }
                 }

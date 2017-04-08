@@ -27,3 +27,4 @@ void read_pdf_files(std::vector<std::string>& v, std::string& path);
 std::string get_random_filename();
 std::string mark_quote(const std::string& s);
 std::string unmark_quote(const std::string& s);
+bool file_exists(const std::string &name);
