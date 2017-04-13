@@ -22,6 +22,6 @@ public:
     static BiblioServer & get_instance();
     std::string get_content_copy();
 
-    void startServer();
+    void start_server();
 
 };

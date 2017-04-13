@@ -28,27 +28,7 @@ void log(const char *message) {
     std::cout << buf << message << std::endl;
 }
 
-BiblioServer::BiblioServer() {
-
-    std::string directoryPath = Config::get_instance().lookup("articles.path");
-    std::vector<std::string> filenames = read_pdf_files_recursive(directoryPath);
-
-    Database *db = Database::connect_database();
-    std::vector<ArticleInfo> data_from_db;
-    if (db != nullptr) {
-        data_from_db = db->get_data(filenames);
-        delete db;
-    }
-
-    BiblioManager manager;
-    std::stringstream out_html;
-    BiblioManager::start_print_html(out_html);
-    print_rescan_button_html(out_html);
-    manager.print_html(out_html, data_from_db);
-    BiblioManager::end_print_html(out_html);
-
-    content = out_html.str();
-}
+BiblioServer::BiblioServer() {}
 
 BiblioServer &BiblioServer::get_instance() {
     static BiblioServer server;
@@ -69,31 +49,17 @@ std::string BiblioServer::rescan_and_get_content() {
         db->purge();
     }
 
-    std::vector<ArticleInfo> data_from_db;
-    std::vector<std::string> filenames_to_search;
-    if (db != nullptr) {
-        data_from_db = db->get_data(filenames, &filenames_to_search);
-    }
-
     BiblioManager manager;
-    if (!filenames_to_search.empty()) {
+    std::vector<ArticleInfo> result = manager.get_info(filenames, db, false);
 
-        std::queue<std::string, std::deque<std::string>> in(
-                std::deque<std::string>(filenames_to_search.begin(), filenames_to_search.end()));
-        BiblioThreadContext::init(in);
-        std::vector<ArticleInfo> result = manager.search_distance(levenshtein_distance, false);
-
-        if (db != nullptr) {
-            db->add_data(result);
-            delete db;
-        }
-        data_from_db.insert(data_from_db.end(), result.begin(), result.end());
+    if (db != nullptr) {
+        delete db;
     }
 
     std::stringstream out_html;
     BiblioManager::start_print_html(out_html);
     print_rescan_button_html(out_html);
-    manager.print_html(out_html, data_from_db);
+    manager.print_html(out_html, result);
     BiblioManager::end_print_html(out_html);
 
     return out_html.str();
@@ -150,10 +116,13 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
     }
 }
 
-void BiblioServer::startServer() {
+void BiblioServer::start_server() {
     const char *http_port = Config::get_instance().lookup("articles.port");
     struct mg_mgr mgr;
     struct mg_connection *conn;
+
+    log("scanning folder");
+    BiblioServer::get_instance().content = rescan_and_get_content();
 
     mg_mgr_init(&mgr, NULL);
     conn = mg_bind(&mgr, http_port, ev_handler);

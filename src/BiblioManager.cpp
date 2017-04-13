@@ -282,3 +282,27 @@ void BiblioManager::cout_not_found_articles(const vector<ArticleInfo> &result) {
     cout << "=========================================================================" << endl;
 }
 
+std::vector<ArticleInfo> BiblioManager::get_info(const std::vector<std::string> &filenames,
+                                  Database * db, bool is_offline) {
+    vector<string> filenames_to_search;
+    vector<ArticleInfo> data_from_db;
+    if (db != nullptr) {
+        data_from_db = db->get_data(filenames, &filenames_to_search);
+    } else {
+        filenames_to_search = filenames;
+    }
+
+    if (!filenames_to_search.empty()) {
+        queue<string, deque<string>> in(deque<string>(filenames_to_search.begin(), filenames_to_search.end()));
+        BiblioThreadContext::init(in);
+        vector<ArticleInfo> result = search_distance(levenshtein_distance, is_offline);
+        BiblioManager::cout_not_found_articles(result);
+
+        if (db != nullptr) {
+            db->add_data(result);
+        }
+        data_from_db.insert(data_from_db.end(), result.begin(), result.end());
+    }
+    return data_from_db;
+}
+

@@ -15,15 +15,12 @@ Database::Database(const string &db_filename) {
 
 Database *Database::connect_database() {
     Config &cfg = Config::get_instance();
-    try {
-        if (cfg.exists("database") && cfg.lookup("database.enabled")) {
-            string filename = cfg.lookup("database.filename");
-            Database *my_db = new Database(filename);
-            return my_db;
-        } else {
-            return nullptr;
-        }
-    } catch (BiblioException e) {
+
+    if (cfg.exists("database") && cfg.lookup("database.enabled")) {
+        string filename = cfg.lookup("database.filename");
+        Database *my_db = new Database(filename);
+        return my_db;
+    } else {
         return nullptr;
     }
 }
@@ -111,7 +108,7 @@ ArticleInfo *Database::get_data(const std::string &filename) const {
 }
 
 std::vector<ArticleInfo> Database::get_data(const std::vector<std::string> &filenames,
-                                            std::vector<std::string> * absent) const {
+                                            std::vector<std::string> *absent) const {
     std::vector<ArticleInfo> data_from_db = {};
     for (const auto &filename : filenames) {
         ArticleInfo *result_ptr = get_data(filename);
