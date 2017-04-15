@@ -110,7 +110,7 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
                 instance.rescan_cond_var.notify_one();
             } else {
                 if (query == "settings") {
-                    std::ifstream ifs("test_html.html");
+                    std::ifstream ifs("settings.html");
                     out_html = std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
 //                    std::vector<std::string> v_search = {"$timeout$", "$port$", };
 //                    str.replace(str.find(search), search.length(), replace);

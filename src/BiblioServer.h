@@ -7,6 +7,7 @@ class BiblioServer { //singleton
 private:
     std::string content;
     std::mutex m_content;
+    std::mutex is_rescan;
     std::condition_variable rescan_cond_var;
 
     BiblioServer();
