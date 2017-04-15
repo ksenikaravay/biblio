@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Settings</title>
+</head>
+<body>
+<style>
+    table{
+        table-layout: fixed;
+    }
+    th, td {
+        width: 300px;
+    }
+    fieldset{
+        background-color:rgba(245,245,255,0.75);
+    }
+    input{
+        /*size: 50;*/
+    }
+</style>
+<form name="settings">
+    <fieldset >
+        <legend>Server settings</legend>
+        <table>
+            <tr>
+                <td><label>Rescan timeout (seconds)</label></td>
+                <td><input name="timeout" type="text" value="$server.timeout$"></td>
+            </tr>
+            <tr>
+                <td><label>Port</label></td>
+                <td><input name="port" type="text" readonly value="$server.port$"></td>
+            </tr>
+        </table>
+    </fieldset>
+    <fieldset>
+        <legend>Directory settings</legend>
+        <table>
+            <tr>
+                <td><label>Directory path</label></td>
+                <td><input name="directory" type="text" value="$directory.path$"></td>
+            </tr>
+        </table>
+    </fieldset>
+    <fieldset>
+        <legend>Database settings</legend>
+        <table>
+            <tr>
+                <td><label>Database path</label></td>
+                <td><input name="database" type="text" value="$database.filename$"></td>
+            </tr>
+        </table>
+    </fieldset>
+    <fieldset>
+        <legend>Publishers search settings</legend>
+        <table>
+            <tr><td><input name="dblp_enabled" type="checkbox" $dblp.enabled$><label>dblp.org</label></td></tr>
+            <tr><td><input name="arxiv_enabled" type="checkbox" $arxiv.enabled$><label>export.arxiv.org</label></td></tr>
+            <tr><td><input name="nature_enabled" type="checkbox" $nature.enabled$><label>www.nature.com</label></td></tr>
+            <tr>
+                <td><input name="springer_enabled" type="checkbox" $springer.enabled$><label>springer.com</label></td>
+                <td><label>apikey: <input name="springer_apikey" type="text" value="$springer.apikey$"></label></td>
+            </tr>
+            <tr>
+                <td><input name="sciencedirect_enabled" type="checkbox" $sciencedirect.enabled$><label>elsevier.com (sciencedirect)</label></td>
+                <td><label>apikey: <input name="sciencedirect_apikey" type="text" value="$sciencedirect.apikey$"></label></td>
+            </tr>
+            <tr>
+                <td><input name="scopus_enabled" type="checkbox" $scopus.enabled$><label>elsevier.com (scopus)</label></td>
+                <td><label>apikey: <input name="scopus_apikey" type="text" value="$scopus.apikey$"></label></td>
+            </tr>
+        </table>
+    </fieldset>
+    <table>
+        <tr><td></td><td><input type="submit"></td></tr>
+    </table>
+
+
+</form>
+
+</body>
+</html>

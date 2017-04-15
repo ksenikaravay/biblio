@@ -149,14 +149,14 @@ void BiblioManager::end_print_html(ostream &out) {
 }
 
 void BiblioManager::print_html(ostream &out, const vector<ArticleInfo> &result) {
-    out << "\t\t<table border=\"1\" width=\"100%\" cellpadding=\"5\" bgcolor=\"#42D6FF\">\n";
+    out << "\t\t<table border=\"1\" width=\"100%\" cellpadding=\"5\" bgcolor=\"#E6E6FA\">\n";
     for (size_t i = 0; i < result.size(); i++) {
         out << "\t\t\t<tr>\n";
         out << "\t\t\t\t<td align=\"center\"><a href=\"" << result[i].get_filename() << "\">" << result[i].get_filename() << "</a></td>\n";
         if (i % 2 == 0) {
-            out << "\t\t\t\t<td bgcolor=\"#FFE780\">\n";
+            out << "\t\t\t\t<td bgcolor=\"#F5DEB3\">\n";
         } else {
-            out << "\t\t\t\t<td bgcolor=\"#FBF9CB\">\n";
+            out << "\t\t\t\t<td bgcolor=\"#FFF8DC\">\n";
         }
         out << "\t\t\t\t\t<pre>  ";
         vector<string> authors = result[i].get_authors();

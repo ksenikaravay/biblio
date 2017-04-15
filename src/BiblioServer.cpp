@@ -9,23 +9,30 @@
 #include "BiblioManager.h"
 #include "BiblioThreadContext.h"
 
-void print_rescan_button_html(std::ostream &out) {
+std::string get_current_time() {
+    time_t seconds = time(NULL);
+    tm *timeinfo = localtime(&seconds);
+    char buf[10];
+    sprintf(buf, "%02d:%02d:%02d ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    return std::string(buf);
+}
+
+void log(const char *message) {
+    std::cout << get_current_time() << message << std::endl;
+}
+void print_buttons_html(std::ostream &out) {
     out << "<script type=\"text/javascript\">\n"
-            "    function on_button_click(){\n"
+            "    function rescan_click(){\n"
             "        var request = new XMLHttpRequest();\n"
             "        request.open(\"GET\", \"/?rescan\", true);\n"
             "        request.send();\n"
             "    }\n"
             "</script>\n"
-            "<p align=\"center\"><button type=\"button\" onclick=\"on_button_click()\">Rescan directory</button></p>";
-}
-
-void log(const char *message) {
-    time_t seconds = time(NULL);
-    tm *timeinfo = localtime(&seconds);
-    char buf[10];
-    sprintf(buf, "%02d:%02d:%02d: ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-    std::cout << buf << message << std::endl;
+            "<p align=\"right\">rescan finished at " << get_current_time() << "</p>"
+            "<p align=\"right\">"
+            "   <button type=\"button\" onclick=\"rescan_click()\">Rescan directory</button>"
+            "   <button type=\"button\" onclick=\"document.location.href='/?settings'\">Settings</button>"
+            "</p>";
 }
 
 BiblioServer::BiblioServer() {}
@@ -40,7 +47,7 @@ std::string BiblioServer::get_content_copy() {
 }
 
 std::string BiblioServer::rescan_and_get_content() {
-    std::string directoryPath = Config::get_instance().lookup("articles.path");
+    std::string directoryPath = Config::get_instance().lookup("directory.path");
     std::vector<std::string> filenames = read_pdf_files_recursive(directoryPath);
 
     Database *db = Database::connect_database();
@@ -58,7 +65,7 @@ std::string BiblioServer::rescan_and_get_content() {
 
     std::stringstream out_html;
     BiblioManager::start_print_html(out_html);
-    print_rescan_button_html(out_html);
+    print_buttons_html(out_html);
     manager.print_html(out_html, result);
     BiblioManager::end_print_html(out_html);
 
@@ -67,10 +74,9 @@ std::string BiblioServer::rescan_and_get_content() {
 
 void BiblioServer::update_db_thread_function() {
     BiblioServer &instance = BiblioServer::get_instance();
-    int timeout = std::stoi(Config::get_instance().lookup("articles.timeout"));
-    std::mutex m_tmp;
+    int timeout = std::stoi(Config::get_instance().lookup("server.timeout"));
     while (true) {
-        std::unique_lock<std::mutex> lock_to_wait(m_tmp);
+        std::unique_lock<std::mutex> lock_to_wait(instance.is_rescan);
         instance.rescan_cond_var.wait_for(lock_to_wait, std::chrono::seconds(timeout));
 
         std::string out_html = rescan_and_get_content();
@@ -97,17 +103,24 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
         log(log_message.str().c_str());
 
         if (uri == "/") {
+            std::string out_html;
             mg_send_head(conn, 200, -1, "");
+
             if (query == "rescan") {
                 instance.rescan_cond_var.notify_one();
             } else {
-                std::string out_html;
-                {
+                if (query == "settings") {
+                    std::ifstream ifs("test_html.html");
+                    out_html = std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
+//                    std::vector<std::string> v_search = {"$timeout$", "$port$", };
+//                    str.replace(str.find(search), search.length(), replace);
+                } else {
                     std::unique_lock<std::mutex> lock(instance.m_content);
                     out_html = instance.get_content_copy();
                 }
                 mg_printf_http_chunk(conn, "%s", out_html.c_str());
             }
+
             mg_send_http_chunk(conn, "", 0);
         } else {
             mg_http_serve_file(conn, hm, uri.c_str(),mg_mk_str("application/pdf"), mg_mk_str(""));
@@ -117,11 +130,13 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
 }
 
 void BiblioServer::start_server() {
-    const char *http_port = Config::get_instance().lookup("articles.port");
+    const char *http_port = Config::get_instance().lookup("server.port");
     struct mg_mgr mgr;
     struct mg_connection *conn;
 
-    log("scanning folder");
+    const char * path = Config::get_instance().lookup("directory.path");
+    std::string log_message = std::string("scanning folder ") + std::string(path);
+    log(log_message.c_str());
     BiblioServer::get_instance().content = rescan_and_get_content();
 
     mg_mgr_init(&mgr, NULL);
