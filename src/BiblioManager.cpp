@@ -152,22 +152,23 @@ void BiblioManager::print_html(ostream &out, const vector<ArticleInfo> &result) 
     out << "\t\t<table border=\"1\" width=\"100%\" cellpadding=\"5\" bgcolor=\"#E6E6FA\">\n";
     for (size_t i = 0; i < result.size(); i++) {
         out << "\t\t\t<tr>\n";
-        out << "\t\t\t\t<td align=\"center\"><a href=\"" << result[i].get_filename() << "\">" << result[i].get_filename() << "</a></td>\n";
+        string filename = result[i].get_filename();
+        string name = filename.substr(filename.find_last_of('/') + 1);
+        out << "\t\t\t\t<td align=\"center\"><a href=\"" << filename << "\">" << name << "</a></td>\n";
         if (i % 2 == 0) {
-            out << "\t\t\t\t<td bgcolor=\"#F5DEB3\">\n";
+            out << "\t\t\t\t<td bgcolor=\"#F5DEB3\">";
         } else {
-            out << "\t\t\t\t<td bgcolor=\"#FFF8DC\">\n";
+            out << "\t\t\t\t<td bgcolor=\"#FFF8DC\">";
         }
-        out << "\t\t\t\t\t<pre>  ";
         vector<string> authors = result[i].get_authors();
         size_t t = authors.size();
         if (t > 0) {
             for (size_t j = 0; j < t - 1; ++j) {
                 out << authors[j] << ", ";
             }
-            out << authors[t - 1] << ":\n  ";
+            out << authors[t - 1] << ":<br>\n  ";
         }
-        out << result[i].get_title();
+        out << "\t\t\t\t\t" << result[i].get_title();
         if (result[i].get_type() != "") {
             out << " " << result[i].get_type() << ".";
         }
@@ -187,9 +188,8 @@ void BiblioManager::print_html(ostream &out, const vector<ArticleInfo> &result) 
             out << " " << result[i].get_number() << ".";
         }
         if (result[i].get_url() != "") {
-            out << "\n  " << "<a href=\"" << result[i].get_url() << "\">" << result[i].get_url() << "</a>";
+            out << "<br>\n  \t\t\t\t\t" << "<a href=\"" << result[i].get_url() << "\">" << result[i].get_url() << "</a>\n";
         }
-        out << "</pre>\n";
         out << "\t\t\t\t</td>\n";
         out << "\t\t\t</tr>\n";
     }
