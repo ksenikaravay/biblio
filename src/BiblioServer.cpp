@@ -4,6 +4,7 @@
 #include <thread>
 #include <ctime>
 #include <map>
+#include <curl/curl.h>
 
 #include "BiblioServer.h"
 #include "Database.h"
@@ -52,6 +53,15 @@ std::map<std::string, std::string> tokenize(const char *cStr) {
     }
 
     return result;
+}
+
+std::map<std::string, std::string> get_decoded_parameters(const std::string &query) {
+    CURL * curl = curl_easy_init();
+    char * output = curl_easy_unescape(curl, query.c_str(), query.length(), nullptr);
+    std::map<std::__cxx11::string, std::__cxx11::string> values = tokenize(output);
+    curl_free(output);
+    curl_easy_cleanup(curl);
+    return values;
 }
 
 bool has_element(const std::map<std::string, std::string> & values, const std::string & element) {
@@ -125,9 +135,6 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
         log_message << "got request to " << uri.c_str() << " with params " << query.c_str();
         log(log_message.str().c_str());
 
-        std::ifstream ifs("settings.html");
-        std::string settings_html_format = std::string((std::istreambuf_iterator<char>(ifs)),
-                                                       (std::istreambuf_iterator<char>()));
         Config &cfg = Config::get_instance();
 
         if (uri == "/") {
@@ -144,7 +151,7 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
             mg_send_http_chunk(conn, "", 0);
         } else if (uri == "/settings") {
             if (query != "") {
-                std::map<std::string, std::string> values = tokenize(query.c_str());
+                std::map<std::string, std::string> values = get_decoded_parameters(query);
                 cfg.lookup("server.timeout") = values["server.timeout"];
                 cfg.lookup("server.port") = values["server.port"];
                 cfg.lookup("directory.path") = values["directory.path"];
@@ -161,7 +168,7 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
                 cfg.save();
             }
             char buf[4096];
-            sprintf(buf, settings_html_format.c_str(),
+            sprintf(buf, instance.settings.c_str(),
                     cfg.lookup("server.timeout").c_str(), cfg.lookup("server.port").c_str(),
                     cfg.lookup("directory.path").c_str(), cfg.lookup("database.filename").c_str(),
                     cfg.lookup("dblp.enabled") ? "checked" : "",
@@ -190,7 +197,11 @@ void BiblioServer::start_server() {
     const char *path = Config::get_instance().lookup("directory.path");
     std::string log_message = std::string("scanning folder ") + std::string(path);
     log(log_message.c_str());
+
     BiblioServer::get_instance().content = rescan_and_get_content();
+    std::ifstream ifs("settings.html");
+    BiblioServer::get_instance().settings = std::string((std::istreambuf_iterator<char>(ifs)),
+                                                        (std::istreambuf_iterator<char>()));
 
     mg_mgr_init(&mgr, NULL);
     conn = mg_bind(&mgr, http_port, ev_handler);
