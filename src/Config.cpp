@@ -44,3 +44,7 @@ bool Config::lookupValue(const string & s, string & res) const {
     static Config config;
     return config;
 }
+
+void Config::save() {
+    cfg.writeFile(filename.c_str());
+}

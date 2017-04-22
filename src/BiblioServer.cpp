@@ -3,6 +3,7 @@
 #include <sstream>
 #include <thread>
 #include <ctime>
+#include <map>
 
 #include "BiblioServer.h"
 #include "Database.h"
@@ -20,6 +21,7 @@ std::string get_current_time() {
 void log(const char *message) {
     std::cout << get_current_time() << message << std::endl;
 }
+
 void print_buttons_html(std::ostream &out) {
     out << "<script type=\"text/javascript\">\n"
             "    function rescan_click(){\n"
@@ -29,10 +31,31 @@ void print_buttons_html(std::ostream &out) {
             "    }\n"
             "</script>\n"
             "<p align=\"right\">rescan finished at " << get_current_time() << "</p>"
-            "<p align=\"right\">"
-            "   <button type=\"button\" onclick=\"rescan_click()\">Rescan directory</button>"
-            "   <button type=\"button\" onclick=\"document.location.href='/?settings'\">Settings</button>"
-            "</p>";
+                "<p align=\"right\">"
+                "   <button type=\"button\" onclick=\"rescan_click()\">Rescan directory</button>"
+                "   <button type=\"button\" onclick=\"document.location.href='/settings'\">Settings</button>"
+                "</p>";
+}
+
+std::map<std::string, std::string> tokenize(const char *cStr) {
+    std::map<std::string, std::string> result;
+
+    std::istringstream stream(cStr);
+    std::string parameter;
+    while (getline(stream, parameter, '&')) {
+        std::istringstream paramStream(parameter);
+        std::string key;
+        std::string value;
+        getline(paramStream, key, '=');
+        getline(paramStream, value);
+        result.insert(std::make_pair(key, value));
+    }
+
+    return result;
+}
+
+bool has_element(const std::map<std::string, std::string> & values, const std::string & element) {
+    return values.find(element) != values.cend();
 }
 
 BiblioServer::BiblioServer() {}
@@ -102,6 +125,11 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
         log_message << "got request to " << uri.c_str() << " with params " << query.c_str();
         log(log_message.str().c_str());
 
+        std::ifstream ifs("settings.html");
+        std::string settings_html_format = std::string((std::istreambuf_iterator<char>(ifs)),
+                                                       (std::istreambuf_iterator<char>()));
+        Config &cfg = Config::get_instance();
+
         if (uri == "/") {
             std::string out_html;
             mg_send_head(conn, 200, -1, "");
@@ -109,21 +137,46 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
             if (query == "rescan") {
                 instance.rescan_cond_var.notify_one();
             } else {
-                if (query == "settings") {
-                    std::ifstream ifs("settings.html");
-                    out_html = std::string((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-//                    std::vector<std::string> v_search = {"$timeout$", "$port$", };
-//                    str.replace(str.find(search), search.length(), replace);
-                } else {
-                    std::unique_lock<std::mutex> lock(instance.m_content);
-                    out_html = instance.get_content_copy();
-                }
+                std::unique_lock<std::mutex> lock(instance.m_content);
+                out_html = instance.get_content_copy();
                 mg_printf_http_chunk(conn, "%s", out_html.c_str());
             }
-
             mg_send_http_chunk(conn, "", 0);
+        } else if (uri == "/settings") {
+            if (query != "") {
+                std::map<std::string, std::string> values = tokenize(query.c_str());
+                cfg.lookup("server.timeout") = values["server.timeout"];
+                cfg.lookup("server.port") = values["server.port"];
+                cfg.lookup("directory.path") = values["directory.path"];
+                cfg.lookup("database.filename") = values["database.filename"];
+                cfg.lookup("springer.apikey") = values["springer.apikey"];
+                cfg.lookup("scopus.apikey") = values["scopus.apikey"];
+                cfg.lookup("sciencedirect.apikey") = values["sciencedirect.apikey"];
+                cfg.lookup("dblp.enabled") = has_element(values, "dblp.enabled");
+                cfg.lookup("arxiv.enabled") = has_element(values, "arxiv.enabled");
+                cfg.lookup("nature.enabled") = has_element(values, "nature.enabled");
+                cfg.lookup("springer.enabled") = has_element(values, "springer.enabled");
+                cfg.lookup("scopus.enabled") = has_element(values, "scopus.enabled");
+                cfg.lookup("sciencedirect.enabled") = has_element(values, "sciencedirect.enabled");
+                cfg.save();
+            }
+            char buf[4096];
+            sprintf(buf, settings_html_format.c_str(),
+                    cfg.lookup("server.timeout").c_str(), cfg.lookup("server.port").c_str(),
+                    cfg.lookup("directory.path").c_str(), cfg.lookup("database.filename").c_str(),
+                    cfg.lookup("dblp.enabled") ? "checked" : "",
+                    cfg.lookup("arxiv.enabled") ? "checked" : "",
+                    cfg.lookup("nature.enabled") ? "checked" : "",
+                    cfg.lookup("springer.enabled") ? "checked" : "", cfg.lookup("springer.apikey").c_str(),
+                    cfg.lookup("sciencedirect.enabled") ? "checked" : "", cfg.lookup("sciencedirect.apikey").c_str(),
+                    cfg.lookup("scopus.enabled") ? "checked" : "", cfg.lookup("scopus.apikey").c_str());
+
+            mg_send_head(conn, 200, -1, "");
+            mg_printf_http_chunk(conn, "%s", buf);
+            mg_send_http_chunk(conn, "", 0);
+
         } else {
-            mg_http_serve_file(conn, hm, uri.c_str(),mg_mk_str("application/pdf"), mg_mk_str(""));
+            mg_http_serve_file(conn, hm, uri.c_str(), mg_mk_str("application/pdf"), mg_mk_str(""));
         }
 
     }
@@ -134,7 +187,7 @@ void BiblioServer::start_server() {
     struct mg_mgr mgr;
     struct mg_connection *conn;
 
-    const char * path = Config::get_instance().lookup("directory.path");
+    const char *path = Config::get_instance().lookup("directory.path");
     std::string log_message = std::string("scanning folder ") + std::string(path);
     log(log_message.c_str());
     BiblioServer::get_instance().content = rescan_and_get_content();
@@ -143,7 +196,7 @@ void BiblioServer::start_server() {
     conn = mg_bind(&mgr, http_port, ev_handler);
     mg_set_protocol_http_websocket(conn);
 
-    log("starting server");
+    log("server started");
 
     std::thread thread_updating_db(update_db_thread_function);
 

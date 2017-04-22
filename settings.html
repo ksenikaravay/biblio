@@ -7,16 +7,17 @@
 <body>
 <style>
     table{
+        width: 100%;
         table-layout: fixed;
     }
-    th, td {
-        width: 300px;
+    td.label {
+        width: 30%;
     }
     fieldset{
         background-color:rgba(245,245,255,0.75);
     }
-    input{
-        /*size: 50;*/
+    input.field{
+        width: 50%;
     }
 </style>
 <form name="settings">
@@ -24,12 +25,12 @@
         <legend>Server settings</legend>
         <table>
             <tr>
-                <td><label>Rescan timeout (seconds)</label></td>
-                <td><input name="timeout" type="text" value="$server.timeout$"></td>
+                <td class="label"><label>Rescan timeout (seconds)</label></td>
+                <td><input class="field" name="server.timeout" type="text" value="%s"></td>
             </tr>
             <tr>
-                <td><label>Port</label></td>
-                <td><input name="port" type="text" readonly value="$server.port$"></td>
+                <td class="label"><label>Port</label></td>
+                <td><input class="field" name="server.port" type="text" readonly value="%s"></td>
             </tr>
         </table>
     </fieldset>
@@ -37,8 +38,8 @@
         <legend>Directory settings</legend>
         <table>
             <tr>
-                <td><label>Directory path</label></td>
-                <td><input name="directory" type="text" value="$directory.path$"></td>
+                <td class="label"><label>Directory path</label></td>
+                <td><input class="field" name="directory.path" type="text" value="%s"></td>
             </tr>
         </table>
     </fieldset>
@@ -46,28 +47,28 @@
         <legend>Database settings</legend>
         <table>
             <tr>
-                <td><label>Database path</label></td>
-                <td><input name="database" type="text" value="$database.filename$"></td>
+                <td class="label"><label>Database path</label></td>
+                <td><input class="field" name="database.filename" type="text" value="%s"></td>
             </tr>
         </table>
     </fieldset>
     <fieldset>
         <legend>Publishers search settings</legend>
         <table>
-            <tr><td><input name="dblp_enabled" type="checkbox" $dblp.enabled$><label>dblp.org</label></td></tr>
-            <tr><td><input name="arxiv_enabled" type="checkbox" $arxiv.enabled$><label>export.arxiv.org</label></td></tr>
-            <tr><td><input name="nature_enabled" type="checkbox" $nature.enabled$><label>www.nature.com</label></td></tr>
+            <tr><td class="label"><input name="dblp.enabled" type="checkbox" %s><label>dblp.org</label></td></tr>
+            <tr><td class="label"><input name="arxiv.enabled" type="checkbox" %s><label>export.arxiv.org</label></td></tr>
+            <tr><td class="label"><input name="nature.enabled" type="checkbox" %s><label>www.nature.com</label></td></tr>
             <tr>
-                <td><input name="springer_enabled" type="checkbox" $springer.enabled$><label>springer.com</label></td>
-                <td><label>apikey: <input name="springer_apikey" type="text" value="$springer.apikey$"></label></td>
+                <td class="label"><input name="springer.enabled" type="checkbox" %s><label>springer.com</label></td>
+                <td><input class="field" name="springer.apikey" type="text" value="%s"><label> apikey</label></td>
             </tr>
             <tr>
-                <td><input name="sciencedirect_enabled" type="checkbox" $sciencedirect.enabled$><label>elsevier.com (sciencedirect)</label></td>
-                <td><label>apikey: <input name="sciencedirect_apikey" type="text" value="$sciencedirect.apikey$"></label></td>
+                <td class="label"><input name="sciencedirect.enabled" type="checkbox" %s><label>elsevier.com (sciencedirect)</label></td>
+                <td><input class="field" name="sciencedirect.apikey" type="text" value="%s"><label> apikey</label></td>
             </tr>
             <tr>
-                <td><input name="scopus_enabled" type="checkbox" $scopus.enabled$><label>elsevier.com (scopus)</label></td>
-                <td><label>apikey: <input name="scopus_apikey" type="text" value="$scopus.apikey$"></label></td>
+                <td class="label"><input name="scopus.enabled" type="checkbox" %s><label>elsevier.com (scopus)</label></td>
+                <td><input class="field" name="scopus.apikey" type="text" value="%s"><label> apikey</label></td>
             </tr>
         </table>
     </fieldset>
