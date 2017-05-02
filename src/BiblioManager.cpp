@@ -5,8 +5,9 @@
 #include <queue>
 
 #include "BiblioManager.h"
-#include "RequesterManager.h"
 #include "BiblioThreadContext.h"
+#include "tools.h"
+#include "FB2Parser.h"
 
 
 using namespace std;
@@ -214,48 +215,63 @@ std::vector<ArticleInfo> BiblioManager::search_distance(std::function<size_t(con
     return BiblioThreadContext::instance().get_output();
 }
 
-void
-BiblioManager::thread_function(std::function<size_t(const std::string &, const std::string &)> dist, bool is_offline) {
-    string filename;
-    vector<ArticleInfo> result = {};
-    RequesterManager req_manager = RequesterManager();
-    vector<Requester *> requesters = req_manager.get_all_requesters();
-    bool found = false;
-    while(!BiblioThreadContext::instance().my_empty()) {
-        filename = BiblioThreadContext::instance().my_pop();
-        if (filename == "") {
-            break;
-        }
+void BiblioManager::process_pdf(const string &filename, bool is_offline, const RequesterManager &req_manager,
+                                std::function<size_t(const std::string &, const std::string &)> dist) {
+    const vector<Requester *> &requesters = req_manager.get_all_requesters();
 
-        PictureParser picture_parser = PictureParser(filename, 300, 300, get_random_filename() + ".png", "png", 700);
-        string saved_title = raw_to_formatted(picture_parser.find_title());
-        string title = low_letters_only(saved_title);
-        if (is_offline || title.size() == 0) {
-            BiblioThreadContext::instance().my_push(ArticleInfo(saved_title, filename));
-            continue;
-        }
-        found = false;
-        for (size_t k = 0; k < requesters.size(); k++) {
-            result = search_requester(*requesters[k], saved_title);
-            if (result.size() > 0) {
-                for (size_t i = 0; i < result.size(); i++) {
-                    string cur_title = raw_to_formatted(result[i].get_title());
-                    cur_title = low_letters_only(cur_title);
-                    size_t distance = dist(cur_title, title);
-                    int precision = 100 - (int) (100 * distance / max(title.size(), cur_title.size()));
-                    result[i].set_precision(precision);
-                }
-                stable_sort(result.begin(), result.end(), greater);
-                if (result[0].get_precision() > 90) {
-                    result[0].set_filename(filename);
-                    BiblioThreadContext::instance().my_push(result[0]);
-                    found = true;
-                    break;
-                }
+    PictureParser picture_parser = PictureParser(filename, 300, 300, get_random_filename() + ".png", "png", 700);
+    string saved_title = raw_to_formatted(picture_parser.find_title());
+    string title = low_letters_only(saved_title);
+    if (is_offline || title.size() == 0) {
+        BiblioThreadContext::instance().my_push(ArticleInfo(saved_title, filename));
+        return;
+    }
+
+    for (size_t k = 0; k < requesters.size(); k++) {
+        vector<ArticleInfo> result = search_requester(*requesters[k], saved_title);
+        if (result.size() > 0) {
+            for (size_t i = 0; i < result.size(); i++) {
+                string cur_title = raw_to_formatted(result[i].get_title());
+                cur_title = low_letters_only(cur_title);
+                size_t distance = dist(cur_title, title);
+                int precision = 100 - (int) (100 * distance / max(title.size(), cur_title.size()));
+                result[i].set_precision(precision);
+            }
+            stable_sort(result.begin(), result.end(), greater);
+            if (result[0].get_precision() > 90) {
+                result[0].set_filename(filename);
+                BiblioThreadContext::instance().my_push(result[0]);
+
+                return;
             }
         }
-        if (!found) {
-            BiblioThreadContext::instance().my_push(ArticleInfo(saved_title, filename));
+    }
+
+    BiblioThreadContext::instance().my_push(ArticleInfo(saved_title, filename));
+    return;
+}
+void BiblioManager::process_fb2(const string &filename) {
+    try {
+        FB2Parser fb2_parser;
+        const ArticleInfo result = fb2_parser.parse(filename);
+        BiblioThreadContext::instance().my_push(result);
+    } catch (BiblioException e) {
+        std::cout << e.what() << std::endl;
+    }
+
+}
+
+void BiblioManager::thread_function(std::function<size_t(const std::string &, const std::string &)> dist,
+                                    bool is_offline) {
+    std::string filename;
+    RequesterManager req_manager = RequesterManager();
+
+    while(!BiblioThreadContext::instance().my_empty()) {
+        filename = BiblioThreadContext::instance().my_pop();
+        if (get_file_extention(filename) == "pdf") {
+            process_pdf(filename, is_offline, req_manager, dist);
+        } else if (get_file_extention(filename) == "fb2") {
+            process_fb2(filename);
         }
     }
 }
@@ -270,7 +286,7 @@ void BiblioManager::cout_not_found_articles(const vector<ArticleInfo> &result) {
     cout << "=========================================================================" << endl << endl;
     size_t result_size = result.size(), found = result_size;
     for (size_t k = 0; k < result_size; k++) {
-        if (result[k].get_year() == "") {
+        if (get_file_extention(result[k].get_filename()) == "pdf" && result[k].get_year() == "") {
             found--;
             cout << "filename: " << result[k].get_filename() << endl;
             cout << "title: " << result[k].get_title() << endl << endl;

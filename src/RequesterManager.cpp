@@ -45,6 +45,6 @@ RequesterManager::~RequesterManager(){
     }
 }
 
-std::vector<Requester *> RequesterManager::get_all_requesters(){
+const vector<Requester *> & RequesterManager::get_all_requesters() const {
     return req;
 }

@@ -68,6 +68,22 @@ bool has_element(const std::map<std::string, std::string> & values, const std::s
     return values.find(element) != values.cend();
 }
 
+void set_params(const Config &cfg, const std::map<std::string, std::string> &params) {
+    cfg.lookup("server.timeout") = params.at("server.timeout");
+    cfg.lookup("server.port") = params.at("server.port");
+    cfg.lookup("directory.path") = params.at("directory.path");
+    cfg.lookup("database.filename") = params.at("database.filename");
+    cfg.lookup("springer.apikey") = params.at("springer.apikey");
+    cfg.lookup("scopus.apikey") = params.at("scopus.apikey");
+    cfg.lookup("sciencedirect.apikey") = params.at("sciencedirect.apikey");
+    cfg.lookup("dblp.enabled") = has_element(params, "dblp.enabled");
+    cfg.lookup("arxiv.enabled") = has_element(params, "arxiv.enabled");
+    cfg.lookup("nature.enabled") = has_element(params, "nature.enabled");
+    cfg.lookup("springer.enabled") = has_element(params, "springer.enabled");
+    cfg.lookup("scopus.enabled") = has_element(params, "scopus.enabled");
+    cfg.lookup("sciencedirect.enabled") = has_element(params, "sciencedirect.enabled");
+}
+
 BiblioServer::BiblioServer() {}
 
 BiblioServer &BiblioServer::get_instance() {
@@ -152,20 +168,11 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
         } else if (uri == "/settings") {
             if (query != "") {
                 std::map<std::string, std::string> values = get_decoded_parameters(query);
-                cfg.lookup("server.timeout") = values["server.timeout"];
-                cfg.lookup("server.port") = values["server.port"];
-                cfg.lookup("directory.path") = values["directory.path"];
-                cfg.lookup("database.filename") = values["database.filename"];
-                cfg.lookup("springer.apikey") = values["springer.apikey"];
-                cfg.lookup("scopus.apikey") = values["scopus.apikey"];
-                cfg.lookup("sciencedirect.apikey") = values["sciencedirect.apikey"];
-                cfg.lookup("dblp.enabled") = has_element(values, "dblp.enabled");
-                cfg.lookup("arxiv.enabled") = has_element(values, "arxiv.enabled");
-                cfg.lookup("nature.enabled") = has_element(values, "nature.enabled");
-                cfg.lookup("springer.enabled") = has_element(values, "springer.enabled");
-                cfg.lookup("scopus.enabled") = has_element(values, "scopus.enabled");
-                cfg.lookup("sciencedirect.enabled") = has_element(values, "sciencedirect.enabled");
-                cfg.save();
+                if (!file_exists(values["directory.path"])) {
+                    values["directory.path"] = cfg.lookup("directory.path").c_str();
+                }
+                set_params(cfg, values);
+                cfg.save_to_file();
             }
             char buf[4096];
             sprintf(buf, instance.settings.c_str(),
@@ -183,7 +190,10 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
             mg_send_http_chunk(conn, "", 0);
 
         } else {
-            mg_http_serve_file(conn, hm, uri.c_str(), mg_mk_str("application/pdf"), mg_mk_str(""));
+            int uri_len = uri.length();
+            char filename[uri_len];
+            mg_url_decode(uri.c_str(), uri_len, filename, uri_len, 0);
+            mg_http_serve_file(conn, hm, filename, mg_mk_str("application/pdf"), mg_mk_str(""));
         }
 
     }
@@ -195,8 +205,9 @@ void BiblioServer::start_server() {
     struct mg_connection *conn;
 
     const char *path = Config::get_instance().lookup("directory.path");
-    std::string log_message = std::string("scanning folder ") + std::string(path);
-    log(log_message.c_str());
+    std::stringstream log_message;
+    log_message << "scanning folder " << path;
+    log(log_message.str().c_str());
 
     BiblioServer::get_instance().content = rescan_and_get_content();
     std::ifstream ifs("settings.html");

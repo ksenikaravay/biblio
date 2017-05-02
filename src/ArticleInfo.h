@@ -27,6 +27,7 @@ public:
                 std::string const &venue, std::string const &volume, std::string const &number,
                 std::string const &pages, std::string const &year, std::string const &type,
                 std::string const &url);
+    ArticleInfo(std::string const &title, std::vector<std::string> const &authors, std::string const &filename);
     ArticleInfo(std::string const &title, std::string const &filename);
     std::string const &get_filename() const;
     std::string const &get_title() const;

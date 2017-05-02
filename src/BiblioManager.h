@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <functional>
@@ -9,6 +8,7 @@
 #include "Requesters/Requester.h"
 #include "PictureParser.h"
 #include "tools.h"
+#include "RequesterManager.h"
 
 class BiblioManager {
 
@@ -18,8 +18,10 @@ private:
 private:
     static bool greater(const ArticleInfo &info_1, const ArticleInfo &info_2);
     static void thread_function(std::function<size_t(const std::string &, const std::string &)> dist, bool is_offline);
+    static void process_pdf(const std::string &filename, bool is_offline, const RequesterManager &req_manager,
+                            std::function<size_t(const std::string &, const std::string &)> dist);
+    static void process_fb2(const std::string &filename);
     static std::vector<ArticleInfo> search_requester(Requester &requester, std::string query);
-
 public:
     BiblioManager();
     BiblioManager(int threads);

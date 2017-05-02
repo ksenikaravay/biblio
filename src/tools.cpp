@@ -113,6 +113,16 @@ std::vector<std::string> read_pdf_files_recursive(std::string &path) {
     return files;
 }
 
+//vector<string> read_pdf_files_from_list(const vector<string> &path_list) {
+//    vector<string> filenames = {};
+//    vector<string> files_from_path = {};
+//    for (string path : path_list) {
+//        read_pdf_files(files_from_path, path);
+//        filenames.insert(filenames.end(), files_from_path.begin(), files_from_path.end());
+//    }
+//    return filenames;
+//}
+
 void read_pdf_files(std::vector<std::string> &v, std::string &path) {
     if (path[path.length() - 1] != '/') {
         path += "/";
@@ -132,7 +142,7 @@ void read_pdf_files(std::vector<std::string> &v, std::string &path) {
             }
         } else {
 
-            if (string(file.extension) == "pdf") {
+            if (string(file.extension) == "pdf" || string(file.extension) == "fb2") {
                 v.push_back(path + filename);
             }
         }
@@ -173,5 +183,24 @@ bool file_exists(const std::string &name) {
     return (stat(name.c_str(), &buffer) == 0);
 }
 
+std::string join_without_empty(const std::vector<std::string> &strings, const char *delimiter) {
+    std::stringstream ss;
+    bool any_written = false;
+    for (int i = 0; i < strings.size(); ++i) {
+        const std::string &elem = strings[i];
+        if (elem != "") {
+            if (i > 0 && any_written) {
+                ss << delimiter;
+            }
+            ss << elem;
+            any_written = true;
+        }
+    }
+    return ss.str();
+}
+
+std::string get_file_extention(std::string filename) {
+    return filename.substr(filename.find_last_of(".") + 1);
+}
 
 

@@ -1,6 +1,6 @@
 all: prepare biblio
-biblio: myBin/main.o myBin/ArticleInfo.o myBin/BiblioManager.o myBin/BiblioServer.o myBin/BiblioThreadContext.o myBin/Config.o myBin/Database.o myBin/mongoose.o myBin/PictureParser.o myBin/RequesterManager.o myBin/tools.o myBin/Requesters/Requester.o myBin/Requesters/ArxivRequester.o myBin/Requesters/DBLPRequester.o myBin/Requesters/NatureRequester.o myBin/Requesters/ScienceDirectRequester.o myBin/Requesters/ScopusRequester.o myBin/Requesters/SpringerRequester.o myBin/jsoncpp.o
-	g++ myBin/main.o myBin/ArticleInfo.o myBin/BiblioManager.o myBin/BiblioServer.o myBin/BiblioThreadContext.o myBin/Config.o myBin/Database.o myBin/mongoose.o myBin/PictureParser.o myBin/RequesterManager.o myBin/tools.o myBin/Requesters/Requester.o myBin/Requesters/ArxivRequester.o myBin/Requesters/DBLPRequester.o myBin/Requesters/NatureRequester.o myBin/Requesters/ScienceDirectRequester.o myBin/Requesters/ScopusRequester.o myBin/Requesters/SpringerRequester.o myBin/jsoncpp.o -o biblio -lcurl -lpoppler-cpp -ltesseract -llept -lpthread -lconfig++ -lopencv_core -lopencv_highgui -lopencv_imgproc -ltinyxml2 -lsqlite3
+biblio: myBin/main.o myBin/ArticleInfo.o myBin/BiblioManager.o myBin/BiblioServer.o myBin/BiblioThreadContext.o myBin/Config.o myBin/Database.o myBin/FB2Parser.o myBin/mongoose.o myBin/PictureParser.o myBin/RequesterManager.o myBin/tools.o myBin/Requesters/Requester.o myBin/Requesters/ArxivRequester.o myBin/Requesters/DBLPRequester.o myBin/Requesters/NatureRequester.o myBin/Requesters/ScienceDirectRequester.o myBin/Requesters/ScopusRequester.o myBin/Requesters/SpringerRequester.o myBin/jsoncpp.o
+	g++ myBin/main.o myBin/ArticleInfo.o myBin/BiblioManager.o myBin/BiblioServer.o myBin/BiblioThreadContext.o myBin/Config.o myBin/Database.o myBin/FB2Parser.o myBin/mongoose.o myBin/PictureParser.o myBin/RequesterManager.o myBin/tools.o myBin/Requesters/Requester.o myBin/Requesters/ArxivRequester.o myBin/Requesters/DBLPRequester.o myBin/Requesters/NatureRequester.o myBin/Requesters/ScienceDirectRequester.o myBin/Requesters/ScopusRequester.o myBin/Requesters/SpringerRequester.o myBin/jsoncpp.o -o biblio -lexpat -lcurl -lpoppler-cpp -ltesseract -llept -lpthread -lconfig++ -lopencv_core -lopencv_highgui -lopencv_imgproc -ltinyxml2 -lsqlite3
 
 myBin/main.o: src/main.cpp src/Requesters/Requester.h src/BiblioManager.h src/BiblioThreadContext.h
 	g++ -std=c++11 -c src/main.cpp -o myBin/main.o
@@ -8,7 +8,7 @@ myBin/main.o: src/main.cpp src/Requesters/Requester.h src/BiblioManager.h src/Bi
 myBin/ArticleInfo.o: src/ArticleInfo.cpp src/ArticleInfo.h lib/json/json.h lib/json/value.h
 	g++ -std=c++11 -c src/ArticleInfo.cpp -o myBin/ArticleInfo.o
 
-myBin/BiblioManager.o: src/BiblioManager.cpp src/BiblioManager.h src/RequesterManager.h src/BiblioThreadContext.h
+myBin/BiblioManager.o: src/BiblioManager.cpp src/BiblioManager.h src/RequesterManager.h src/BiblioThreadContext.h src/FB2Parser.h
 	g++ -std=c++11 -c src/BiblioManager.cpp -o myBin/BiblioManager.o
 
 myBin/BiblioThreadContext.o: src/BiblioThreadContext.cpp src/BiblioThreadContext.h
@@ -51,6 +51,9 @@ myBin/mongoose.o: lib/mongoose/mongoose.c lib/mongoose/mongoose.h
 	g++ -c lib/mongoose/mongoose.c -o myBin/mongoose.o
 myBin/BiblioServer.o: src/BiblioServer.cpp src/BiblioServer.h
 	g++ -std=c++11 -c src/BiblioServer.cpp -o myBin/BiblioServer.o
+
+myBin/FB2Parser.o: src/FB2Parser.cpp src/FB2Parser.h
+	g++ -std=c++11 -c src/FB2Parser.cpp -o myBin/FB2Parser.o
 
 prepare:
 	mkdir -p myBin

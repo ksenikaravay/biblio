@@ -20,5 +20,5 @@ public:
     libconfig::Setting& lookup(const std::string & s) const;
     bool lookupValue(const std::string & s, int & res) const;
     bool lookupValue(const std::string &  s, std::string & res) const;
-    void save();
+    void save_to_file();
 };

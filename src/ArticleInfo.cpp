@@ -18,6 +18,20 @@ ArticleInfo::ArticleInfo(string const &title, vector<string> const &authors,
     this->precision = 0;
 }
 
+ArticleInfo::ArticleInfo(std::string const &title, vector<string> const &authors, std::string const &filename) {
+    this->filename = filename;
+    this->title = title;
+    this->authors = authors;
+    this->venue = "";
+    this->volume = "";
+    this->number = "";
+    this->pages = "";
+    this->year = "";
+    this->type = "";
+    this->url = "";
+    this->precision = 0;
+}
+
 ArticleInfo::ArticleInfo(std::string const &title, std::string const &filename) {
     this->filename = filename;
     this->title = title;

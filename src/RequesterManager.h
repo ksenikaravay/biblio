@@ -10,5 +10,5 @@ private:
 public:
     RequesterManager();
     ~RequesterManager();
-    std::vector<Requester *> get_all_requesters();
+    const std::vector<Requester *> & get_all_requesters() const;
 };
