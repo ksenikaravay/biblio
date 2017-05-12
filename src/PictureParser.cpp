@@ -181,7 +181,7 @@ const std::string& PictureParser::find_title() {
         double width_rect = this->title_width * screen_res / this->xres;
         poppler::rectangle<double> rect = poppler::rectangle<double>(x_rect, 
                                             y_rect, width_rect, height_rect);
-        result = mypage->text(rect).to_latin1();
+        result = std::string(mypage->text(rect).to_utf8().data());
     }
     result = raw_to_formatted(result);
     this->title = result;

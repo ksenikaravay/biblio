@@ -31,3 +31,4 @@ std::string unmark_quote(const std::string& s);
 bool file_exists(const std::string &name);
 std::string join_without_empty(const std::vector<std::string> &strings, const char *delimiter);
 std::string get_file_extention(std::string filename);
+tm* get_lastmod_time(const std::string &filename);

@@ -72,9 +72,7 @@ ArticleInfo *Database::get_data(const std::string &filename) const {
         }
         int id = sqlite3_column_int(stmt, 0);
         string lastmod_db = string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 11)));
-        struct stat t_stat;
-        stat(filename.c_str(), &t_stat);
-        struct tm *timeinfo = localtime(&t_stat.st_mtim.tv_sec);
+        tm *timeinfo = get_lastmod_time(filename);
         string lastmod_file = asctime(timeinfo);
 
         if (lastmod_file <= lastmod_db) {
@@ -146,8 +144,7 @@ void Database::add_data(const std::vector<ArticleInfo> &data) {
         check_status(request.c_str(), &stmt);
         sqlite3_finalize(stmt);
     }
-
-    struct stat t_stat;
+    
     for (size_t i = 0; i < data_size; i++) {
 
         string filename = mark_quote(data[i].get_filename());
@@ -159,8 +156,7 @@ void Database::add_data(const std::vector<ArticleInfo> &data) {
         string type = mark_quote(data[i].get_type());
         string url = mark_quote(data[i].get_url());
 
-        stat(filename.c_str(), &t_stat);
-        struct tm *timeinfo = localtime(&t_stat.st_mtim.tv_sec);
+        struct tm *timeinfo = get_lastmod_time(filename);
         string lastmod_file = asctime(timeinfo);
         string title = mark_quote(data[i].get_title());
         vector<string> authors = data[i].get_authors();

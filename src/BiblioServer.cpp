@@ -58,7 +58,7 @@ std::map<std::string, std::string> tokenize(const char *cStr) {
 std::map<std::string, std::string> get_decoded_parameters(const std::string &query) {
     CURL * curl = curl_easy_init();
     char * output = curl_easy_unescape(curl, query.c_str(), query.length(), nullptr);
-    std::map<std::__cxx11::string, std::__cxx11::string> values = tokenize(output);
+    std::map<std::string, std::string> values = tokenize(output);
     curl_free(output);
     curl_easy_cleanup(curl);
     return values;
@@ -191,8 +191,8 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
 
         } else {
             int uri_len = uri.length();
-            char filename[uri_len];
-            mg_url_decode(uri.c_str(), uri_len, filename, uri_len, 0);
+            char filename[uri_len + 1];
+            mg_url_decode(uri.c_str(), uri_len, filename, uri_len + 1, 0);
             mg_http_serve_file(conn, hm, filename, mg_mk_str("application/pdf"), mg_mk_str(""));
         }
 

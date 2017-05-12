@@ -203,4 +203,16 @@ std::string get_file_extention(std::string filename) {
     return filename.substr(filename.find_last_of(".") + 1);
 }
 
+tm* get_lastmod_time(const string &filename) {
+    struct stat t_stat;
+    stat(filename.c_str(), &t_stat);
+    struct tm *timeinfo;
+#ifdef __APPLE__
+    timeinfo = localtime(&t_stat.st_mtimespec.tv_sec);
+#else
+    timeinfo = localtime(&t_stat.st_mtim.tv_sec);
+#endif
+    return timeinfo;
+}
+
 
