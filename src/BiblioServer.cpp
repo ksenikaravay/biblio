@@ -23,19 +23,235 @@ void log(const char *message) {
     std::cout << get_current_time() << message << std::endl;
 }
 
-void print_buttons_html(std::ostream &out) {
-    out << "<script type=\"text/javascript\">\n"
+void start_print_search_html(std::ostream &out, std::string &query) {
+    out << "<!DOCTYPE html>\n"
+            "<html lang=\"en\">\n"
+            "<head>\n"
+            "    <meta charset=\"UTF-8\">\n"
+            "    <title>Biblio search results</title>\n"
+            "    <style>\n"
+            "        button {\n"
+            "            font: 14pt serif;\n"
+            "            margin-left: 10px;\n"
+            "        }\n"
+            "        input.field {\n"
+            "            width: 25%;\n"
+            "            height: 16pt;\n"
+            "        }\n"
+            "        input.button {\n"
+            "            font: 14pt serif;\n"
+            "            margin: 10px;\n"
+            "        }"
+            "        image {\n"
+            "            opacity: 0.5;\n"
+            "            width: 40px;\n"
+            "            height: 40px;\n"
+            "            border: 0px;\n"
+            "        }"
+            "        table.results {\n"
+            "            width: 100%;\n"
+            "            table-layout: fixed;\n"
+            "            border: 2pt grey groove;\n"
+            "            padding: 5pt;\n"
+            "            border-collapse: separate;\n"
+            "            border-radius: 6px;\n"
+            "            background-color: rgba(245,245,255,0.75);\n"
+            "            font: normal 14pt serif;\n"
+            "        }\n"
+            "        table.results caption{\n"
+            "            text-align: left;\n"
+            "            font: 14pt serif;\n"
+            "        }\n"
+            "        table.results thead{\n"
+            "            background-color: lightgrey;\n"
+            "        }\n"
+            "        tr.even{\n"
+            "            background-color: white;\n"
+            "        }\n"
+            "        tr.even td{\n"
+            "            border-top: 1pt lightgrey solid;\n"
+            "            border-bottom: 1pt lightgrey solid;\n"
+            "        }\n"
+            "        td.view {\n"
+            "            width: 60px;\n"
+            "            text-align: center;\n"
+            "        }\n"
+            "        td.author{\n"
+            "            width: 20%;\n"
+            "            text-align: center;\n"
+            "        }\n"
+            "        td.title{\n"
+            "            width: 40%;\n"
+            "            text-align: center;\n"
+            "        }\n"
+            "    </style>\n"
+            "</head>\n"
+            "<body>\n"
+            "<p><a href=\"/\">Back to catalogue</a></p>\n"
+            "<form align=\"center\"action=\"search\"><input class=\"field\" name=\"any\" type=\"text\"><input class=\"button\" type=\"submit\" value=\"Search\"></form>\n"
+            "<table class=\"results\">\n"
+            "    <caption>Search results for \"" << query <<"\"</caption>\n"
+            "    <thead>\n"
+            "        <tr>\n"
+            "            <td class=\"view\">Read</td>\n"
+            "            <td class=\"author\">Authors</td>\n"
+            "            <td class=\"title\">Title</td>\n"
+            "            <td>Article info</td>\n"
+            "        </tr>\n"
+            "    </thead>";
+}
+void start_print_html(std::ostream &out) {
+    std::string directoryPath = Config::get_instance().lookup("directory.path");
+    out << "<!DOCTYPE html>\n"
+            "<html lang=\"en\">\n"
+            "<head>\n"
+            "    <meta charset=\"UTF-8\">\n"
+            "    <title>Biblio catalogue</title>\n"
+            "    <style>\n"
+            "        button {\n"
+            "            font: 14pt serif;\n"
+            "            margin-left: 10px;\n"
+            "        }\n"
+            "        table.service {\n"
+            "            width: 100%;\n"
+            "        }\n"
+            "        input.field {\n"
+            "            width: 50%;\n"
+            "            height: 16pt;\n"
+            "        }\n"
+            "        input.button {\n"
+            "            font: 14pt serif;\n"
+            "            margin: 10px;\n"
+            "        }"
+            "        span.rescantime{\n"
+            "            color: grey;\n"
+            "            font: italic 12pt serif;\n"
+            "        }\n"
+            "        img {\n"
+            "            opacity: 0.5;\n"
+            "            width: 40px;\n"
+            "            height: 40px;\n"
+            "            border: 0px;\n"
+            "        }"
+            "        table.results {\n"
+            "            width: 100%;\n"
+            "            table-layout: fixed;\n"
+            "            border: 2pt grey groove;\n"
+            "            padding: 5pt;\n"
+            "            border-collapse: separate;\n"
+            "            border-radius: 6px;\n"
+            "            background-color: rgba(245,245,255,0.75);\n"
+            "            font: normal 14pt serif;\n"
+            "        }\n"
+            "        table.results caption{\n"
+            "            text-align: left;\n"
+            "            font: 14pt serif;\n"
+            "        }\n"
+            "        table.results thead{\n"
+            "            background-color: lightgrey;\n"
+            "        }\n"
+            "        tr.even{\n"
+            "            background-color: white;\n"
+            "        }\n"
+            "        tr.even td{\n"
+            "            border-top: 1pt lightgrey solid;\n"
+            "            border-bottom: 1pt lightgrey solid;\n"
+            "        }\n"
+            "        td.view {\n"
+            "            width: 60px;\n"
+            "            text-align: center;\n"
+            "        }\n"
+            "        td.author{\n"
+            "            width: 20%;\n"
+            "            text-align: center;\n"
+            "        }\n"
+            "        td.title{\n"
+            "            width: 40%;\n"
+            "            text-align: center;\n"
+            "        }\n"
+            "    </style>\n"
+            "</head>\n"
+            "<body>\n"
+            "<script type=\"text/javascript\">\n"
             "    function rescan_click(){\n"
             "        var request = new XMLHttpRequest();\n"
             "        request.open(\"GET\", \"/?rescan\", true);\n"
             "        request.send();\n"
             "    }\n"
             "</script>\n"
-            "<p align=\"right\">rescan finished at " << get_current_time() << "</p>"
-                "<p align=\"right\">"
-                "   <button type=\"button\" onclick=\"rescan_click()\">Rescan directory</button>"
-                "   <button type=\"button\" onclick=\"document.location.href='/settings'\">Settings</button>"
-                "</p>";
+            "<table class=\"service\">\n"
+            "    <tr>\n"
+            "        <td><form action=\"search\"><input class=\"field\" name=\"any\" type=\"text\"><input class=\"button\" type=\"submit\" value=\"Search\"></form></td>\n"
+            "        <td align=\"right\"><button type=\"button\" onclick=\"rescan_click()\">Rescan directory</button></td>\n"
+            "        <td align=\"right\"><button type=\"button\" onclick=\"document.location.href='/settings'\">Settings</button></td>\n"
+            "    </tr>\n"
+            "    <tr><td></td><td align=\"right\"><span class=\"rescantime\"> last rescan: " << get_current_time() << "</span></td><td></td></tr>\n"
+            "</table>\n"
+            "<table class=\"results\">\n"
+            "    <caption>" << directoryPath << "</caption>\n"
+            "    <thead>\n"
+            "    <tr>\n"
+            "        <td class=\"view\">Read</td>\n"
+            "        <td class=\"author\">Authors</td>\n"
+            "        <td class=\"title\">Title</td>\n"
+            "        <td>Article info</td>\n"
+            "    </tr>\n"
+            "    </thead>";
+}
+
+void print_res_table_html(std::ostream &out, const std::vector<ArticleInfo> &result) {
+    for (size_t i = 0; i < result.size(); i++) {
+        std::string filename = result[i].get_filename();
+        std::string name = filename.substr(filename.find_last_of('/') + 1);
+        if (i % 2) {
+            out << "    <tr class=\"odd\">";
+        } else {
+            out << "    <tr class=\"even\">";
+        }
+        out << "        <td class=\"view\">\n"
+                "            <a href=\"read?" << filename << "\"><img src=\"viewIcon.png\"></a>\n";
+        out << "        </td>\n"
+                "        <td class=\"author\">";
+        std::vector<std::string> authors = result[i].get_authors();
+        size_t t = authors.size();
+        if (t > 0) {
+            for (size_t j = 0; j < t - 1; ++j) {
+                out << authors[j] << ", ";
+            }
+            out << authors[t - 1] << "</td>\n";
+        }
+        out <<  "        <td class=\"title\">" << result[i].get_title() << "</td>\n"
+                "        <td>";
+        if (result[i].get_type() != "") {
+            out << " " << result[i].get_type() << ".";
+        }
+        if (result[i].get_venue() != "") {
+            out << " " << result[i].get_venue() << ".";
+        }
+        if (result[i].get_volume() != "") {
+            out << " " << result[i].get_volume() << ".";
+        }
+        if (result[i].get_year() != "") {
+            out << " " << result[i].get_year() << ".";
+        }
+        if (result[i].get_pages() != "") {
+            out << " " << result[i].get_pages() << ".";
+        }
+        if (result[i].get_number() != "") {
+            out << " " << result[i].get_number() << ".";
+        }
+        if (result[i].get_url() != "") {
+            out << " [<a href=\"" << result[i].get_url() << "\">more</a>]\n";
+        }
+        out << "        </td>\n"
+                "    </tr>";
+    }
+}
+
+void end_print_html(std::ostream &out) {
+    out << "</table>\n"
+            "</body>\n"
+            "</html>";
 }
 
 std::map<std::string, std::string> tokenize(const char *cStr) {
@@ -113,10 +329,9 @@ std::string BiblioServer::rescan_and_get_content() {
     }
 
     std::stringstream out_html;
-    BiblioManager::start_print_html(out_html);
-    print_buttons_html(out_html);
-    manager.print_html(out_html, result);
-    BiblioManager::end_print_html(out_html);
+    start_print_html(out_html);
+    print_res_table_html(out_html, result);
+    end_print_html(out_html);
 
     return out_html.str();
 }
@@ -189,11 +404,24 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
             mg_printf_http_chunk(conn, "%s", buf);
             mg_send_http_chunk(conn, "", 0);
 
-        } else {
-            int uri_len = uri.length();
-            char filename[uri_len + 1];
-            mg_url_decode(uri.c_str(), uri_len, filename, uri_len + 1, 0);
+        } else if(uri == "/search") {
+            std::vector<ArticleInfo> search_result;
+            std::stringstream out_html;
+            start_print_search_html(out_html, query);
+            print_res_table_html(out_html,search_result);
+            end_print_html(out_html);
+
+            mg_send_head(conn, 200, -1, "");
+            mg_printf_http_chunk(conn, "%s", out_html.str().c_str());
+            mg_send_http_chunk(conn, "", 0);
+
+        }else if (uri == "/read") {
+            int query_len = query.length();
+            char filename[query_len + 1];
+            mg_url_decode(query.c_str(), query_len, filename, query_len + 1, 0);
             mg_http_serve_file(conn, hm, filename, mg_mk_str("application/pdf"), mg_mk_str(""));
+        } else {
+            mg_http_serve_file(conn, hm, uri.c_str()+1, mg_mk_str("image/png"), mg_mk_str(""));
         }
 
     }
