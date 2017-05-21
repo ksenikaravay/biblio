@@ -29,8 +29,9 @@ Database *Database::connect_database() {
 int Database::check_status(const char *request, sqlite3_stmt **stmt) const {
     int rc = sqlite3_prepare(db, request, -1, stmt, NULL);
     if (rc != SQLITE_OK) {
-        cout << "status: " << rc << endl;
-        throw BiblioException(sqlite3_errmsg(db));
+        std::stringstream msg;
+        msg << "sqlite3_prepare status = " << rc << std::endl << sqlite3_errmsg(db);
+        throw BiblioException(msg.str());
     } else
         while ((rc = sqlite3_step(*stmt)) != SQLITE_DONE) {
             switch (rc) {
@@ -91,7 +92,9 @@ ArticleInfo *Database::get_data(const std::string &filename) const {
             ArticleInfo *info = new ArticleInfo(title, authors, venue, volume,
                                                 number, pages, year, type, url);
             info->set_filename(filename);
+
             sqlite3_finalize(stmt);
+
             return info;
         } else {
             sqlite3_finalize(stmt);
@@ -99,7 +102,9 @@ ArticleInfo *Database::get_data(const std::string &filename) const {
             request = "DELETE FROM Data WHERE id = " + to_string(id);
 
             check_status(request.c_str(), &stmt);
+
             sqlite3_finalize(stmt);
+
             return nullptr;
         }
     }
@@ -144,7 +149,6 @@ void Database::add_data(const std::vector<ArticleInfo> &data) {
         check_status(request.c_str(), &stmt);
         sqlite3_finalize(stmt);
     }
-    
     for (size_t i = 0; i < data_size; i++) {
 
         string filename = mark_quote(data[i].get_filename());
@@ -182,6 +186,48 @@ void Database::add_data(const std::vector<ArticleInfo> &data) {
     }
 }
 
+std::vector<ArticleInfo>
+Database::search_data(const std::string &title_query, const std::string &authors_query, bool OR) const {
+    std::vector<ArticleInfo> result;
+    sqlite3_stmt *stmt;
+
+    std::string cond_operator = OR ? " OR " : " AND ";
+    std::string title_search = (title_query.empty()) ? "" : "title LIKE \'%" + title_query + "%\'";
+    std::string authors_search = (authors_query.empty()) ? "" : "authors LIKE \'%" + authors_query + "%\'";
+    std::string query = join_without_empty({title_search, authors_search}, cond_operator.c_str());
+    query = (query.empty()) ? query : " WHERE " + query;
+    std::string request = "SELECT * FROM Data" + query;
+
+    int has_result = check_status(request.c_str(), &stmt);
+    if (has_result == 0) {
+        sqlite3_finalize(stmt);
+        return result;
+    } else {
+        do {
+            string filename = unmark_quote(string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 1))));
+            string title = unmark_quote(string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 2))));
+            string author_string = unmark_quote(
+                    string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 3))));
+            vector<string> authors = split(author_string, '|');
+            string venue = unmark_quote(string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 4))));
+            string volume = unmark_quote(string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 5))));
+            string number = unmark_quote(string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 6))));
+            string pages = unmark_quote(string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 7))));
+            string year = unmark_quote(string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 8))));
+            string type = unmark_quote(string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 9))));
+            string url = unmark_quote(string(reinterpret_cast<const char *>(sqlite3_column_text(stmt, 10))));
+
+            ArticleInfo info(title, authors, venue, volume, number, pages, year, type, url);
+            info.set_filename(filename);
+            result.push_back(info);
+        } while (sqlite3_step(stmt) == SQLITE_ROW);
+    }
+
+    sqlite3_finalize(stmt);
+
+    return result;
+}
+
 void Database::purge() {
     sqlite3_stmt *stmt;
     int rc;
@@ -195,7 +241,7 @@ void Database::purge() {
         return;
     } else {
         vector<int> ids_to_purge = {};
-        request = "SELECT * FROM Data ";
+        request = "SELECT * FROM Data";
         rc = sqlite3_prepare(db, request.c_str(), -1, &stmt, NULL);
         if (rc != SQLITE_OK) {
             throw BiblioException(sqlite3_errmsg(db));

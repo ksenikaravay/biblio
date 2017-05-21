@@ -24,6 +24,8 @@ public:
     ArticleInfo * get_data(const std::string& filename) const;
     std::vector<ArticleInfo> get_data(const std::vector<std::string>& filenames, std::vector<std::string>* absent = nullptr) const;
     void add_data(const std::vector<ArticleInfo> &data);
+    std::vector<ArticleInfo>
+    search_data(const std::string &title_query, const std::string &authors_query, bool OR) const;
     void purge();
 };
 

@@ -23,31 +23,36 @@ void log(const char *message) {
     std::cout << get_current_time() << message << std::endl;
 }
 
-void start_print_search_html(std::ostream &out, std::string &query) {
+void start_print_search_html(std::ostream &out, const std::string &any_query, const std::string &title_query,
+                             const std::string &authors_query) {
     out << "<!DOCTYPE html>\n"
             "<html lang=\"en\">\n"
             "<head>\n"
             "    <meta charset=\"UTF-8\">\n"
             "    <title>Biblio search results</title>\n"
             "    <style>\n"
-            "        button {\n"
-            "            font: 14pt serif;\n"
-            "            margin-left: 10px;\n"
-            "        }\n"
             "        input.field {\n"
             "            width: 25%;\n"
             "            height: 16pt;\n"
+            "            margin-left: 10px;\n"
+            "            margin-right: 20px;\n"
+            "            margin-bottom: 2px;\n"
+            "            margin-top: 2px;\n"
             "        }\n"
             "        input.button {\n"
             "            font: 14pt serif;\n"
-            "            margin: 10px;\n"
-            "        }"
-            "        image {\n"
+            "        }\n"
+            "        fieldset{\n"
+            "            border: 1pt lightgrey solid;\n"
+            "            background-color: rgba(245,245,255,0.75);\n"
+            "            text-align: center;\n"
+            "        }\n"
+            "        img {\n"
             "            opacity: 0.5;\n"
             "            width: 40px;\n"
             "            height: 40px;\n"
             "            border: 0px;\n"
-            "        }"
+            "        }\n"
             "        table.results {\n"
             "            width: 100%;\n"
             "            table-layout: fixed;\n"
@@ -64,6 +69,7 @@ void start_print_search_html(std::ostream &out, std::string &query) {
             "        }\n"
             "        table.results thead{\n"
             "            background-color: lightgrey;\n"
+            "            text-align: center;\n"
             "        }\n"
             "        tr.even{\n"
             "            background-color: white;\n"
@@ -78,19 +84,25 @@ void start_print_search_html(std::ostream &out, std::string &query) {
             "        }\n"
             "        td.author{\n"
             "            width: 20%;\n"
-            "            text-align: center;\n"
             "        }\n"
             "        td.title{\n"
             "            width: 40%;\n"
-            "            text-align: center;\n"
             "        }\n"
             "    </style>\n"
             "</head>\n"
             "<body>\n"
             "<p><a href=\"/\">Back to catalogue</a></p>\n"
-            "<form align=\"center\"action=\"search\"><input class=\"field\" name=\"any\" type=\"text\"><input class=\"button\" type=\"submit\" value=\"Search\"></form>\n"
+            "<form align=\"center\"action=\"search\"><input class=\"field\" name=\"any\" type=\"text\" value=\"" << any_query << "\">\n"
+            "    <input class=\"button\" type=\"submit\" value=\"Search\"></form>\n"
+            "<br>\n"
+            "<form action=\"search\"><fieldset><legend align=\"left\">Advanced search</legend>\n"
+            "    <label>Title</label><input class=\"field\" name=\"title\" value=\"" << title_query << "\" type=\"text\">\n"
+            "    <label>Author</label><input class=\"field\" name=\"authors\" value=\"" << authors_query << "\" type=\"text\">\n"
+            "    <input class=\"button\" type=\"submit\" value=\"Search\">\n"
+            "</fieldset></form>\n"
+            "<br>\n"
             "<table class=\"results\">\n"
-            "    <caption>Search results for \"" << query <<"\"</caption>\n"
+            "    <caption>Search results</caption>\n"
             "    <thead>\n"
             "        <tr>\n"
             "            <td class=\"view\">Read</td>\n"
@@ -149,6 +161,7 @@ void start_print_html(std::ostream &out) {
             "        }\n"
             "        table.results thead{\n"
             "            background-color: lightgrey;\n"
+            "            text-align: center;\n"
             "        }\n"
             "        tr.even{\n"
             "            background-color: white;\n"
@@ -163,11 +176,9 @@ void start_print_html(std::ostream &out) {
             "        }\n"
             "        td.author{\n"
             "            width: 20%;\n"
-            "            text-align: center;\n"
             "        }\n"
             "        td.title{\n"
             "            width: 40%;\n"
-            "            text-align: center;\n"
             "        }\n"
             "    </style>\n"
             "</head>\n"
@@ -317,14 +328,11 @@ std::string BiblioServer::rescan_and_get_content() {
 
     Database *db = Database::connect_database();
 
-    if (db != nullptr) {
-        db->purge();
-    }
-
     BiblioManager manager;
     std::vector<ArticleInfo> result = manager.get_info(filenames, db, false);
 
     if (db != nullptr) {
+        db->purge();
         delete db;
     }
 
@@ -407,7 +415,22 @@ void BiblioServer::ev_handler(mg_connection *conn, int event, void *data) {
         } else if(uri == "/search") {
             std::vector<ArticleInfo> search_result;
             std::stringstream out_html;
-            start_print_search_html(out_html, query);
+            std::map<std::string, std::string> query_map = get_decoded_parameters(query);
+
+            Database *db = Database::connect_database();
+
+            if (query_map.find("any") != query_map.end()) {
+                start_print_search_html(out_html, query_map["any"], "", "");
+                search_result= db->search_data(query_map["any"], query_map["any"], true);
+            } else {
+                start_print_search_html(out_html, "", query_map["title"], query_map["authors"]);
+                search_result= db->search_data(query_map["title"], query_map["authors"], false);
+            }
+
+            if (db != nullptr) {
+                delete db;
+            }
+
             print_res_table_html(out_html,search_result);
             end_print_html(out_html);
 
