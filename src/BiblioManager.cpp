@@ -228,22 +228,26 @@ void BiblioManager::process_pdf(const string &filename, bool is_offline, const R
     }
 
     for (size_t k = 0; k < requesters.size(); k++) {
-        vector<ArticleInfo> result = search_requester(*requesters[k], saved_title);
-        if (result.size() > 0) {
-            for (size_t i = 0; i < result.size(); i++) {
-                string cur_title = raw_to_formatted(result[i].get_title());
-                cur_title = low_letters_only(cur_title);
-                size_t distance = dist(cur_title, title);
-                int precision = 100 - (int) (100 * distance / max(title.size(), cur_title.size()));
-                result[i].set_precision(precision);
-            }
-            stable_sort(result.begin(), result.end(), greater);
-            if (result[0].get_precision() > 90) {
-                result[0].set_filename(filename);
-                BiblioThreadContext::instance().my_push(result[0]);
+        try {
+            vector<ArticleInfo> result = search_requester(*requesters[k], saved_title);
+            if (result.size() > 0) {
+                for (size_t i = 0; i < result.size(); i++) {
+                    string cur_title = raw_to_formatted(result[i].get_title());
+                    cur_title = low_letters_only(cur_title);
+                    size_t distance = dist(cur_title, title);
+                    int precision = 100 - (int) (100 * distance / max(title.size(), cur_title.size()));
+                    result[i].set_precision(precision);
+                }
+                stable_sort(result.begin(), result.end(), greater);
+                if (result[0].get_precision() > 90) {
+                    result[0].set_filename(filename);
+                    BiblioThreadContext::instance().my_push(result[0]);
 
-                return;
+                    return;
+                }
             }
+        } catch (BiblioException e) {
+            continue;
         }
     }
 
